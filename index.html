@@ -1,228 +1,475 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Персональные данные и доступы — тренажёр аналитика</title>
-<meta name="description" content="Сервис записи к врачу разбирается по частям: какие данные персональные, на каком основании их собирают, кто что видит, где лежат секреты и что писать в аудит." />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Персональные данные и доступы — интерактивный тренажёр</title>
+<meta name="description" content="Сервис записи к врачу разбирается по частям: какие данные персональные, на каком основании их собирают и сколько хранят, кто какие записи видит, где лежат секреты и что писать в аудит.">
 <style>
-  /*
-    Один файл без сборки — как у остальных тренажёров. Всё, что нужно для
-    работы, лежит здесь: разметка, стили, задания и мост к платформе.
-  */
-  :root {
-    color-scheme: dark;
-    --bg: #0b1120;
-    --surface: #131c2f;
-    --surface-2: #1b263f;
-    --line: #2a3a5a;
-    --text: #e8eefc;
-    --muted: #9fb0d0;
-    --accent: #22d3ee;
-    --accent-ink: #062c34;
-    --ok: #34d399;
-    --bad: #fb7185;
-    --warn: #fbbf24;
-    --radius: 14px;
+  :root{
+    --ground:#eaeef4; --surface:#ffffff; --surface-2:#f2f5fa; --surface-3:#e7ecf4;
+    --ink:#16202f; --muted:#586275; --faint:#8894a6; --line:#d4dbe6;
+    --rel:#2f7d8f; --doc:#c06a12; --kv:#7a45cf; --graph:#0d8e7f;
+    --danger:#c62f27; --danger-bg:#fdeceb; --ok:#1c8a4a; --ok-bg:#e9f7ee;
+    --warn:#9a6a00; --warn-bg:#fdf3dc;
+    --accent:var(--rel);
+    --shadow:0 1px 2px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.06);
+    --mono:"Cascadia Code","JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#0b101a; --surface:#131b28; --surface-2:#1a2434; --surface-3:#222f42;
+      --ink:#e7edf6; --muted:#98a5ba; --faint:#68758c; --line:#293648;
+      --rel:#4fc8dd; --doc:#e8a94b; --kv:#b697f6; --graph:#33cab4;
+      --danger:#ff6f64; --danger-bg:#3a1a18; --ok:#4ed383; --ok-bg:#14301f;
+      --warn:#e8b84b; --warn-bg:#32280f;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#eaeef4; --surface:#ffffff; --surface-2:#f2f5fa; --surface-3:#e7ecf4;
+    --ink:#16202f; --muted:#586275; --faint:#8894a6; --line:#d4dbe6;
+    --rel:#2f7d8f; --doc:#c06a12; --kv:#7a45cf; --graph:#0d8e7f;
+    --danger:#c62f27; --danger-bg:#fdeceb; --ok:#1c8a4a; --ok-bg:#e9f7ee;
+    --warn:#9a6a00; --warn-bg:#fdf3dc;
+    --shadow:0 1px 2px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.06);
+  }
+  :root[data-theme="dark"]{
+    --ground:#0b101a; --surface:#131b28; --surface-2:#1a2434; --surface-3:#222f42;
+    --ink:#e7edf6; --muted:#98a5ba; --faint:#68758c; --line:#293648;
+    --rel:#4fc8dd; --doc:#e8a94b; --kv:#b697f6; --graph:#33cab4;
+    --danger:#ff6f64; --danger-bg:#3a1a18; --ok:#4ed383; --ok-bg:#14301f;
+    --warn:#e8b84b; --warn-bg:#32280f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
   }
 
-  * { box-sizing: border-box; }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--ground); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px 80px}
 
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
-  }
+  header.top{position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--ground) 88%, transparent); backdrop-filter:saturate(1.4) blur(8px); border-bottom:1px solid var(--line)}
+  .head-inner{max-width:1080px; margin:0 auto; padding:14px 20px 0}
+  .brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+  h1{font-size:22px; margin:0; letter-spacing:-.02em; font-weight:680}
+  .sub{color:var(--muted); font-size:14px; margin:2px 0 0}
+  .spacer{flex:1 1 auto}
+  .head-meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .pill{font:600 11.5px/1 var(--mono); color:var(--muted); border:1px solid var(--line); padding:6px 9px; border-radius:999px; white-space:nowrap}
+  .pill.live{color:var(--ok); border-color:color-mix(in srgb, var(--ok) 50%, var(--line))}
+  .theme{appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:8px; padding:6px 10px; font:inherit; font-size:12px; cursor:pointer}
+  .progress{height:5px; background:var(--surface-3); border-radius:999px; margin:10px 0 0; overflow:hidden}
+  .progress > i{display:block; height:100%; background:var(--ok); width:0; transition:width .3s ease}
 
-  /* Фокус виден всегда: тренажёр проходится с клавиатуры целиком. */
-  :focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 6px;
-  }
+  .tabs{display:flex; flex-wrap:wrap; gap:3px 2px; margin-top:10px}
+  .tab{appearance:none; border:0; background:transparent; color:var(--muted); font:inherit; font-size:13px; font-weight:560; padding:8px 11px; cursor:pointer; border-bottom:2.5px solid transparent; white-space:nowrap; border-radius:6px 6px 0 0; display:flex; align-items:center; gap:6px}
+  .tab:hover{color:var(--ink); background:var(--surface-2)}
+  .tab .dot{width:9px; height:9px; border-radius:50%; background:var(--line); flex:none}
+  .tab .dot.done{background:var(--ok)}
+  .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+  .tab:focus-visible, button:focus-visible, select:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 64px; }
+  .panel{display:none; padding-top:24px}
+  .panel.active{display:block; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){.panel.active{animation:none}}
 
-  header.top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    padding: 14px 16px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
+  .lead{font-size:15.5px; color:var(--muted); max-width:68ch; margin:0 0 20px}
+  .lead b{color:var(--ink); font-weight:620}
 
-  header.top h1 { font-size: 17px; margin: 0; }
-  .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
-  .spacer { flex: 1 1 auto; }
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px; margin:16px 0; box-shadow:var(--shadow)}
+  .card h2{font-size:17px; margin:0 0 4px; letter-spacing:-.01em; display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .card h2 .tag{font:600 11px/1 var(--mono); color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); padding:4px 7px; border-radius:6px; letter-spacing:.02em}
+  .card > p{color:var(--muted); font-size:14px; margin:6px 0 14px; max-width:72ch}
+  .card > p:last-child{margin-bottom:0}
+  .card--task{border-color:color-mix(in srgb, var(--accent) 40%, var(--line))}
 
-  .badge {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .badge--live { border-color: var(--accent); color: var(--accent); }
+  .two-w{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  /* Колонка грида по умолчанию не уже своего содержимого: длинная строка в
+     консоли распирала её и вылезала за карточку. */
+  .two-w > *{min-width:0}
+  @media (max-width:820px){.two-w{grid-template-columns:1fr}}
+  .ex-h{font:600 11px/1 var(--mono); color:var(--faint); letter-spacing:.04em; text-transform:uppercase; margin-bottom:8px}
 
-  .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 12px; }
-  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{appearance:none; border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:8px 13px; font:inherit; font-size:13.5px; cursor:pointer; min-height:38px}
+  .chip:hover{border-color:var(--accent)}
+  .chip[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--surface))}
+  .chip.right{border-color:var(--ok); background:var(--ok-bg)}
+  .chip.wrong{border-color:var(--danger); background:var(--danger-bg)}
+  .chip .mk{font:600 11px/1 var(--mono); margin-left:8px; color:var(--muted)}
 
-  main { display: grid; grid-template-columns: 260px 1fr; gap: 16px; margin-top: 16px; }
-  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .opts{list-style:none; padding:0; margin:0; display:grid; gap:8px}
+  .opts button{width:100%; text-align:left; background:var(--surface-2); border:1.5px solid var(--line); color:var(--ink); border-radius:10px; padding:11px 13px; font:inherit; font-size:14px; cursor:pointer; min-height:42px; display:flex; gap:10px; align-items:flex-start}
+  .opts button:hover{border-color:var(--accent)}
+  .opts button[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--surface))}
+  .opts button.right{border-color:var(--ok); background:var(--ok-bg)}
+  .opts button.wrong{border-color:var(--danger); background:var(--danger-bg)}
+  .opts .mk{font:600 12px/1.4 var(--mono); color:var(--muted); flex:none}
 
-  nav.list {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 10px;
-    align-self: start;
-  }
-  nav.list h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 8px 8px 6px; }
-  nav.list button {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: 0;
-    color: var(--text);
-    padding: 8px;
-    border-radius: 10px;
-    font: inherit;
-    font-size: 14px;
-    cursor: pointer;
-    min-height: 40px;
-  }
-  nav.list button:hover { background: var(--surface-2); }
-  nav.list button[aria-current='true'] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
-  nav.list .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line); flex: 0 0 auto; }
-  nav.list .dot.done { background: var(--ok); border-color: var(--ok); }
+  .match{display:grid; gap:8px}
+  .pair{display:grid; grid-template-columns:1fr 260px; gap:8px; align-items:center}
+  @media (max-width:700px){.pair{grid-template-columns:1fr}}
+  .pair .left{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px}
+  select{width:100%; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:9px; padding:9px 10px; font:inherit; font-size:13.5px; min-height:40px}
+  select.right{border-color:var(--ok)} select.wrong{border-color:var(--danger)}
 
-  section.card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px}
+  table.db{border-collapse:collapse; width:100%; font-size:13.5px}
+  table.db th, table.db td{padding:9px 11px; text-align:left; border-bottom:1px solid var(--line); border-right:1px solid var(--line)}
+  table.db th:last-child, table.db td:last-child{border-right:0}
+  table.db tr:last-child td{border-bottom:0}
+  table.db thead th{background:var(--surface-2); vertical-align:top; font-size:12.5px; color:var(--muted)}
+  table.db tbody tr:hover{background:var(--surface-2)}
+  .cell-btn{appearance:none; width:32px; height:32px; border-radius:8px; border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer; font:inherit}
+  .cell-btn[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--surface))}
+  .cell-btn.right{border-color:var(--ok); background:var(--ok-bg)}
+  .cell-btn.wrong{border-color:var(--danger); background:var(--danger-bg)}
+  td.mid{text-align:center}
 
-  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-  h2.title { font-size: 20px; margin: 6px 0 10px; }
-  .story { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
-  .prompt { margin: 0 0 14px; }
+  .console{max-width:100%; font:400 12.5px/1.7 var(--mono); background:var(--surface-3); border:1px solid var(--line); border-radius:10px; padding:12px 14px; color:var(--ink); white-space:pre-wrap; overflow-x:auto}
+  .console b{color:var(--accent)}
+  .note{border-left:3px solid var(--accent); background:var(--surface-2); border-radius:0 10px 10px 0; padding:11px 14px; font-size:13.5px; color:var(--muted); margin-top:14px}
+  .note b{color:var(--ink)}
+  .note.ok{border-color:var(--ok); background:var(--ok-bg); color:var(--ink)}
+  .note.bad{border-color:var(--danger); background:var(--danger-bg); color:var(--ink)}
+  .note.warn{border-color:var(--warn); background:var(--warn-bg); color:var(--ink)}
 
-  ul.opts { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
-  ul.opts button {
-    width: 100%;
-    text-align: left;
-    background: var(--surface-2);
-    border: 1.5px solid var(--line);
-    color: var(--text);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font: inherit;
-    cursor: pointer;
-    min-height: 44px;
-  }
-  ul.opts button[aria-pressed='true'] { border-color: var(--accent); background: #16324a; }
-  ul.opts button.right { border-color: var(--ok); }
-  ul.opts button.wrong { border-color: var(--bad); }
-  ul.opts .mark { float: right; margin-left: 12px; font-weight: 700; }
+  .form-row{display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-top:14px}
+  .act{appearance:none; border:1px solid var(--accent); background:var(--accent); color:var(--ground); border-radius:9px; padding:9px 15px; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; min-height:40px}
+  .act.ghost{background:transparent; color:var(--ink); border-color:var(--line)}
+  .act.ghost:hover{border-color:var(--accent)}
+  .act[disabled]{opacity:.5; cursor:not-allowed}
+  .meta{font:400 12px/1.6 var(--mono); color:var(--faint); margin-top:10px}
 
-  table.grid { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px; }
-  table.grid th, table.grid td { border: 1px solid var(--line); padding: 8px; text-align: left; }
-  table.grid th { color: var(--muted); font-weight: 600; }
-  table.grid td { text-align: center; }
-  table.grid button {
-    width: 34px; height: 34px;
-    border-radius: 8px;
-    border: 1.5px solid var(--line);
-    background: var(--surface-2);
-    color: var(--text);
-    cursor: pointer;
-    font: inherit;
-  }
-  table.grid button[aria-pressed='true'] { border-color: var(--accent); background: #16324a; }
-  table.grid button.right { border-color: var(--ok); }
-  table.grid button.wrong { border-color: var(--bad); }
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; margin-top:12px}
+  .kv .k{color:var(--faint); font:600 11.5px/1.6 var(--mono)}
+  .kv .v{font-variant-numeric:tabular-nums}
 
-  .match { display: grid; gap: 8px; margin-bottom: 16px; }
-  .match .pair { display: grid; grid-template-columns: 1fr 220px; gap: 8px; align-items: center; }
-  @media (max-width: 640px) { .match .pair { grid-template-columns: 1fr; } }
-  .match .left { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
-  .match select {
-    width: 100%;
-    background: var(--surface-2);
-    color: var(--text);
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    padding: 10px;
-    font: inherit;
-    min-height: 44px;
-  }
-  .match select.right { border-color: var(--ok); }
-  .match select.wrong { border-color: var(--bad); }
+  .slider{width:100%; margin:10px 0 4px}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:10px}
+  .legend i{width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:5px}
 
-  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .lines{font:400 12.5px/1.9 var(--mono); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .lines button{display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; padding:7px 12px; cursor:pointer}
+  .lines button:last-child{border-bottom:0}
+  .lines button:hover{background:var(--surface-2)}
+  .lines button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 14%, var(--surface))}
+  .lines button.right{background:var(--ok-bg)}
+  .lines button.wrong{background:var(--danger-bg)}
+  .lines .src{color:var(--faint); font-size:11px; display:block}
 
-  button.btn {
-    background: var(--accent);
-    color: var(--accent-ink);
-    border: 0;
-    border-radius: 12px;
-    padding: 11px 18px;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    min-height: 44px;
-  }
-  button.btn[disabled] { opacity: .5; cursor: not-allowed; }
-  button.ghost { background: none; color: var(--text); border: 1.5px solid var(--line); }
+  .steps{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .step{border:1.5px solid var(--line); border-radius:9px; padding:8px 12px; font-size:13px; background:var(--surface-2); cursor:pointer; font:inherit}
+  .step[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--surface))}
+  .step.done{border-color:var(--ok); background:var(--ok-bg)}
 
-  .note { border-radius: 12px; padding: 12px 14px; font-size: 14px; margin: 14px 0 0; border: 1px solid var(--line); }
-  .note--ok { border-color: var(--ok); background: #0e2a22; }
-  .note--bad { border-color: var(--bad); background: #2c1420; }
-  .note--hint { border-color: var(--warn); background: #2a2212; }
-
-  .meta { color: var(--muted); font-size: 13px; }
-  footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
-  a { color: var(--accent); }
+  .next{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  footer{color:var(--faint); font-size:13px; margin-top:32px; max-width:72ch}
+  a{color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Персональные данные и доступы</h1>
-      <p class="sub">Сервис записи к врачу «Тонус» — разбираем по частям</p>
+
+<header class="top">
+  <div class="head-inner">
+    <div class="brand">
+      <div>
+        <h1>Персональные данные и доступы</h1>
+        <p class="sub">Сервис записи к врачу «Тонус» — разбираем по частям</p>
+      </div>
+      <div class="spacer"></div>
+      <div class="head-meta">
+        <span class="pill" id="score">решено 0 из 13</span>
+        <span class="pill live" id="link" hidden>идёт в профиль навыков</span>
+        <button class="theme" id="theme" type="button">тема: авто</button>
+      </div>
     </div>
-    <div class="spacer"></div>
-    <span class="badge" id="score">решено 0 из 13</span>
-    <span class="badge" id="link" hidden>задания идут в профиль навыков</span>
-  </header>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+  </div>
+</header>
 
-  <div class="bar"><i id="progress"></i></div>
+<div class="wrap">
 
-  <main>
-    <nav class="list" aria-label="Задания">
-      <h2>Задания</h2>
-      <div id="menu"></div>
-    </nav>
+<!-- ─────────────────────────── ДАННЫЕ ─────────────────────────── -->
+<section class="panel" id="data" role="tabpanel" aria-label="Данные">
+  <p class="lead">Витрину для аналитиков собирают по принципу «выгрузим всё, что не ФИО». Здесь видно, почему этого мало: человека выделяют <b>не имена, а сочетания</b> — год рождения, город, дата приёма. Дальше по вкладкам: основание обработки, срок хранения, состав формы.</p>
 
-    <section class="card" id="task" aria-live="polite"></section>
-  </main>
+  <div class="card">
+    <h2><span class="tag">РАЗМЕТКА</span> что здесь персональные данные</h2>
+    <p>Колонки будущей выгрузки. Отметьте те, что остаются персональными данными, — и нажмите «Проверить».</p>
+    <div id="t-pd-kinds"></div>
+  </div>
 
-  <footer>
-    <p>
-      Сценарий вымышленный, персонажи тоже. Правовые формулировки упрощены до сути:
-      тренажёр учит задавать правильные вопросы, а не заменяет юриста.
-    </p>
-  </footer>
+  <div class="card">
+    <h2><span class="tag">СИМУЛЯТОР</span> сколько человек прячется за «обезличенной» строкой</h2>
+    <p>База «Тонуса» — 5 000 пациентов. Добавляйте признаки в выгрузку и смотрите, сколько людей остаётся <b>неотличимыми друг от друга</b>. Пока в группе один человек — строка указывает на него, как бы она ни называлась.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">признаки в выгрузке</div>
+        <div class="chips" id="anon-chips"></div>
+        <div class="note" id="anon-note"></div>
+      </div>
+      <div>
+        <div class="ex-h">что получается</div>
+        <div class="console" id="anon-out"></div>
+        <div class="kv" id="anon-kv"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">основание обработки: почему одни данные можно не отдавать, а другие нельзя не хранить</span></div>
+    <button class="act go" data-goto="basis" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── ОСНОВАНИЯ ─────────────────────────── -->
+<section class="panel" id="basis" role="tabpanel" aria-label="Основания">
+  <p class="lead">Основание обработки — это ответ на вопрос «что будет, если человек скажет нет». У договора, закона и согласия ответы разные, и <b>система обязана вести себя по-разному</b>. Требование «собираем телефон» без основания непроверяемо.</p>
+
+  <div class="card">
+    <h2><span class="tag">СИМУЛЯТОР</span> пациент отзывает согласие</h2>
+    <p>Нажмите «Отозвать согласие» и посмотрите, что обязано отключиться, а что останется работать — и почему.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">состояние</div>
+        <div class="form-row" style="margin-top:0">
+          <button class="act" id="consent-btn" type="button">Отозвать согласие</button>
+          <button class="act ghost" id="consent-reset" type="button">Вернуть как было</button>
+        </div>
+        <div class="note" id="consent-note"></div>
+      </div>
+      <div>
+        <div class="ex-h">что происходит с данными</div>
+        <div class="console" id="consent-out"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> основание для каждого сценария</h2>
+    <div id="t-pd-basis"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">СИМУЛЯТОР</span> жизнь записи во времени</h2>
+    <p>Ползунок — годы после последнего приёма. Смотрите, что происходит с картой, витриной и резервными копиями при двух вариантах требования.</p>
+    <input class="slider" id="ret-slider" type="range" min="0" max="8" step="1" value="0" aria-label="Лет после последнего приёма">
+    <div class="two-w">
+      <div>
+        <div class="ex-h">как написано в требовании</div>
+        <div class="chips" id="ret-mode"></div>
+        <div class="note" id="ret-note"></div>
+      </div>
+      <div>
+        <div class="ex-h">состояние данных</div>
+        <div class="console" id="ret-out"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> срок хранения в требовании</h2>
+    <div id="t-pd-retention"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">состав формы: каждое поле стоит денег дважды</span></div>
+    <button class="act go" data-goto="minimize" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── МИНИМИЗАЦИЯ ─────────────────────────── -->
+<section class="panel" id="minimize" role="tabpanel" aria-label="Минимизация">
+  <p class="lead">Форма записи собирает двенадцать полей: маркетинг просил место работы, поддержка — второй телефон, разработка добавила адрес «на будущее». <b>Данных, которых нет, нельзя лишиться</b>, а каждое лишнее поле стоит и конверсии, и ответственности за хранение.</p>
+
+  <div class="card">
+    <h2><span class="tag">КОНСТРУКТОР</span> соберите форму записи</h2>
+    <p>Выключайте поля и смотрите справа: можно ли ещё оказать услугу, сколько данных вы храните и что будет при утечке.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">поля формы</div>
+        <div class="chips" id="form-chips"></div>
+      </div>
+      <div>
+        <div class="ex-h">последствия</div>
+        <div class="console" id="form-out"></div>
+        <div class="kv" id="form-kv"></div>
+        <div class="note" id="form-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> что собирать не нужно</h2>
+    <div id="t-pd-minimize"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">кто здесь нарушитель и от чего спасают меры</span></div>
+    <button class="act go" data-goto="threat" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── УГРОЗЫ ─────────────────────────── -->
+<section class="panel" id="threat" role="tabpanel" aria-label="Угрозы">
+  <p class="lead">В клинику пришёл известный человек, назавтра его диагноз в сети. Взлома не было: входы штатные, журналы сервера чистые. <b>Меры против внешнего нарушителя здесь не спасают вовсе</b> — и это главный урок модели угроз.</p>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> кто нарушитель</h2>
+    <div id="t-threat-actor"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">ДОСКА</span> мера против угрозы</h2>
+    <p>Нажмите меру — увидите, какие угрозы она закрывает, а какие оставляет открытыми. Одна мера в списке не закрывает ничего: найдите её.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">меры защиты</div>
+        <div class="chips" id="measure-chips"></div>
+      </div>
+      <div>
+        <div class="ex-h">угрозы</div>
+        <div class="console" id="measure-out"></div>
+        <div class="note" id="measure-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> сопоставьте меру и угрозу</h2>
+    <div id="t-threat-measure"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">разграничение доступа: роли, признаки объекта и дыра в адресе страницы</span></div>
+    <button class="act go" data-goto="access" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── ДОСТУПЫ ─────────────────────────── -->
+<section class="panel" id="access" role="tabpanel" aria-label="Доступы">
+  <p class="lead">Как только в требовании появляются слова «свой», «своей клиники», «к нему записаны» — ролей перестаёт хватать: правило зависит от <b>связи между человеком и конкретной записью</b>. Ниже это видно на прогоне сценариев по вашей же матрице.</p>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> где одной роли мало</h2>
+    <div id="t-access-role-or-attribute"></div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">МАТРИЦА</span> кто что может</h2>
+    <p>Отметьте разрешённые действия. После проверки нажмите «Прогнать сценарии» — система пройдёт по вашей матрице шесть жизненных случаев.</p>
+    <div id="t-access-matrix"></div>
+    <div class="form-row"><button class="act ghost" id="run-scenarios" type="button">Прогнать сценарии</button></div>
+    <div class="console" id="scen-out" style="margin-top:12px">нажмите «Прогнать сценарии»</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">СИМУЛЯТОР</span> чужой идентификатор в адресе</h2>
+    <p>Пациент открывает свои результаты: <span class="console" style="display:inline; padding:2px 6px">/results?patient=10482</span>. Меняем число и смотрим, что ответит сервер при разных реализациях проверки.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">как сделана проверка</div>
+        <div class="chips" id="idor-chips"></div>
+        <div class="ex-h" style="margin-top:14px">кто и что запрашивает</div>
+        <div class="chips" id="idor-req"></div>
+      </div>
+      <div>
+        <div class="ex-h">ответ сервера</div>
+        <div class="console" id="idor-out"></div>
+        <div class="note" id="idor-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> требование, закрывающее дыру</h2>
+    <div id="t-access-own-records"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">секреты: чем они отличаются от настроек и где утекают</span></div>
+    <button class="act go" data-goto="secrets" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── СЕКРЕТЫ ─────────────────────────── -->
+<section class="panel" id="secrets" role="tabpanel" aria-label="Секреты">
+  <p class="lead">Секрет — то, чем можно воспользоваться <b>от имени системы</b>. Утекает он не через взлом, а через обычную работу: задача в трекере, журнал, переписка, скриншот, история репозитория.</p>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> секрет или настройка</h2>
+    <div id="t-secret-or-setting"></div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">РАССЛЕДОВАНИЕ</span> найдите, где утёк ключ</h2>
+    <p>Токен платёжного шлюза оказался у постороннего. Ниже — пять мест, которые смотрели при разборе. Отметьте те, где секрет действительно засветился.</p>
+    <div id="t-secret-hunt"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">СИМУЛЯТОР</span> замена утёкшего ключа без остановки</h2>
+    <p>Соберите порядок действий. Неверный порядок остановит приём платежей — симулятор покажет, на сколько минут.</p>
+    <div class="steps" id="rot-steps"></div>
+    <div class="form-row">
+      <button class="act ghost" id="rot-reset" type="button">Начать заново</button>
+    </div>
+    <div class="console" id="rot-out" style="margin-top:12px"></div>
+    <div class="note" id="rot-note"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Дальше →</b> <span class="sub">аудит: что записывать, чтобы разбор был возможен, а журнал не стал утечкой</span></div>
+    <button class="act go" data-goto="audit" type="button">Перейти →</button>
+  </div>
+</section>
+
+<!-- ─────────────────────────── АУДИТ ─────────────────────────── -->
+<section class="panel" id="audit" role="tabpanel" aria-label="Аудит">
+  <p class="lead">Два разных журнала с разными читателями и сроками. Журнал системы нужен дежурному и живёт недели; аудит нужен при разборе спорной ситуации и живёт годами. Смешанные в одном потоке, они <b>теряют друг друга</b>.</p>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> журнал системы или журнал людей</h2>
+    <div id="t-audit-or-log"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">КОНСТРУКТОР</span> соберите запись аудита</h2>
+    <p>Включайте поля и смотрите справа две оценки: хватит ли этого для расследования и не стал ли сам журнал хранилищем медицинской тайны.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">поля записи</div>
+        <div class="chips" id="audit-chips"></div>
+      </div>
+      <div>
+        <div class="ex-h">запись в журнале</div>
+        <div class="console" id="audit-out"></div>
+        <div class="kv" id="audit-kv"></div>
+        <div class="note" id="audit-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--task">
+    <h2><span class="tag">ЗАДАНИЕ</span> состав записи о просмотре карты</h2>
+    <div id="t-audit-scope"></div>
+  </div>
+
+  <div class="card next">
+    <div><b>Итог.</b> <span class="sub">решённые задания уходят в профиль навыков, когда тренажёр открыт внутри платформы</span></div>
+    <button class="act ghost go" data-goto="data" type="button">← В начало</button>
+  </div>
+</section>
+
+<footer>
+  Сценарий вымышленный, персонажи тоже. Правовые формулировки упрощены до сути: тренажёр учит
+  задавать правильные вопросы, а не заменяет юриста.
+</footer>
 </div>
 
 <script>
@@ -238,7 +485,7 @@
   меняется от стенда к стенду. Дальше запоминается источник ответа, и всё
   остальное шлётся уже точно ему. В сообщениях нет ничего, кроме кодов заданий.
 
-  Без платформы всё работает ровно так же — просто некому отчитываться.
+  Без платформы всё работает так же — просто некому отчитываться.
 */
 const PROTOCOL = 'trainer/1';
 const TRAINER = 'privacy';
@@ -246,14 +493,11 @@ const TRAINER = 'privacy';
 const bridge = {
   embedded: window.parent !== window,
   target: '*',
-  connected: false,
-  send(message) {
+  send(message){
     if (!this.embedded) return;
     window.parent.postMessage({ protocol: PROTOCOL, trainer: TRAINER, ...message }, this.target);
   },
-  solved(task, attempts, hints) {
-    this.send({ kind: 'solved', task, attempts, hints });
-  },
+  solved(task, attempts, hints){ this.send({ kind: 'solved', task, attempts, hints }); },
 };
 
 window.addEventListener('message', (event) => {
@@ -262,38 +506,28 @@ window.addEventListener('message', (event) => {
 
   if (data.kind === 'hello') {
     bridge.target = event.origin;
-    bridge.connected = true;
     document.getElementById('link').hidden = false;
-
-    // Платформа помнит зачтённое дольше, чем хранилище этого домена: оно
-    // живёт на чужом сайте и очищается вместе с ним.
     for (const id of Array.isArray(data.solved) ? data.solved : []) {
-      const state = progressOf(id);
-      state.done = true;
-      save();
+      progressOf(id).done = true;
     }
-    render();
+    save(); paintAll();
   }
 
   if (data.kind === 'accepted') {
-    const state = progressOf(data.task);
-    state.accepted = true;
-    save();
-    render();
+    progressOf(data.task).accepted = true;
+    save(); paintAll();
   }
 });
 
-/* ── Задания ──────────────────────────────────────────────────────────── */
-
+/* ── Задания ──────────────────────────────────────────────────────────
+   Код задания и число подсказок обязаны совпадать с манифестом в
+   платформе: задание, о котором она не знает, не засчитается, а лишняя
+   ступень подсказки отбросит сообщение целиком.
+*/
 const TASKS = [
   {
-    id: 'pd-kinds',
-    group: 'Персональные данные',
-    title: 'Что здесь персональные данные',
-    story:
-      'В «Тонусе» заводят витрину для аналитиков. Архитектор говорит: «Выгрузим всё, что не ФИО, — это же не персональные данные».',
+    id: 'pd-kinds', panel: 'data', kind: 'multi',
     prompt: 'Отметьте всё, что остаётся персональными данными.',
-    kind: 'multi',
     options: [
       { text: 'Фамилия, имя и телефон пациента', right: true },
       { text: 'Номер полиса ОМС', right: true },
@@ -304,23 +538,12 @@ const TASKS = [
       { text: 'Число записей на понедельник', right: false },
     ],
     hints: [],
-    explain:
-      'Персональные данные — не только имя. Всё, по чему человека можно выделить среди других, включая косвенные признаки: номер полиса, номер карты с диагнозом, устойчивый хеш телефона. Хеш — это псевдонимизация, а не обезличивание: связь с человеком восстанавливается той же таблицей соответствия. Обезличенным считается то, из чего человека уже не достать, — агрегаты по клинике и техническая информация без привязки к аккаунту.',
+    explain: 'Персональные данные — не только имя. Всё, по чему человека можно выделить среди других, включая косвенные признаки: номер полиса, номер карты с диагнозом, устойчивый хеш телефона. Хеш — это псевдонимизация, а не обезличивание: связь восстанавливается той же таблицей соответствия. Обезличенное — то, из чего человека уже не достать: агрегаты по клинике и техника без привязки к аккаунту.',
   },
-
   {
-    id: 'pd-basis',
-    group: 'Персональные данные',
-    title: 'На каком основании собираем',
-    story:
-      'Юрист просит расписать, зачем «Тонусу» каждый кусок данных. Основание определяет главное: можно ли отказаться и что будет, если человек передумает.',
+    id: 'pd-basis', panel: 'basis', kind: 'match',
     prompt: 'Сопоставьте сценарий с основанием обработки.',
-    kind: 'match',
-    choices: [
-      'Исполнение договора с пациентом',
-      'Требование закона',
-      'Отдельное согласие, которое можно отозвать',
-    ],
+    choices: ['Исполнение договора с пациентом', 'Требование закона', 'Отдельное согласие, которое можно отозвать'],
     pairs: [
       { left: 'Имя и телефон, чтобы записать к врачу и напомнить о приёме', right: 'Исполнение договора с пациентом' },
       { left: 'Передача сведений об оказанной услуге в страховую по ОМС', right: 'Требование закона' },
@@ -330,44 +553,25 @@ const TASKS = [
     ],
     hints: [
       'Спросите про каждый пункт: что случится, если человек скажет «нет»? Запись к врачу без телефона невозможна, а рассылка — вполне.',
-      'Если данные нужны, чтобы выполнить то, за чем человек пришёл, — это договор. Если система обязана их хранить независимо от желания сторон — закон. Всё остальное — согласие, и его придётся уметь отзывать.',
+      'Нужны, чтобы выполнить то, за чем человек пришёл, — договор. Обязаны храниться независимо от желания сторон — закон. Всё остальное — согласие, и его придётся уметь отзывать.',
     ],
-    explain:
-      'Практическое следствие для постановки: у каждого основания своё поведение системы. Договор — данные нужны для услуги и удаляются, когда отпадает необходимость. Закон — срок и состав заданы снаружи, отозвать нельзя. Согласие — обязана существовать кнопка «отозвать», после которой обработка прекращается, а рассылка останавливается. Требование «собираем телефон» без основания непроверяемо: непонятно, что делать с отзывом.',
+    explain: 'У каждого основания своё поведение системы. Договор — данные нужны для услуги и удаляются, когда необходимость отпала. Закон — срок и состав заданы снаружи, отозвать нельзя. Согласие — обязана быть кнопка «отозвать», после которой обработка прекращается. Это и проверяет симулятор выше.',
   },
-
   {
-    id: 'pd-retention',
-    group: 'Персональные данные',
-    title: 'Сколько хранить и что потом',
-    story:
-      'В требованиях к витрине написано: «Хранить данные о приёмах». Сроков нет. Через три года выгрузка весит терабайт, а в ней — карты людей, которые были в клинике однажды.',
+    id: 'pd-retention', panel: 'basis', kind: 'single',
     prompt: 'Какая формулировка годится в требование?',
-    kind: 'single',
     options: [
-      {
-        text: 'Сведения о приёме хранятся срок, установленный для медицинской документации; по истечении карта обезличивается, в витрине остаются агрегаты без идентификаторов. Резервные копии живут 30 дней и стираются по расписанию.',
-        right: true,
-      },
+      { text: 'Сведения о приёме хранятся срок, установленный для медицинской документации; по истечении карта обезличивается, в витрине остаются агрегаты без идентификаторов. Резервные копии живут 30 дней и стираются по расписанию.', right: true },
       { text: 'Данные хранятся бессрочно: медицинская история может понадобиться в любой момент.', right: false },
       { text: 'Данные удаляются через год после последнего приёма, включая всю медицинскую документацию.', right: false },
       { text: 'Срок хранения определяет администратор клиники в настройках.', right: false },
     ],
-    hints: [
-      'Проверьте формулировку тремя вопросами: назван ли срок, сказано ли, что происходит после него, и учтены ли резервные копии.',
-    ],
-    explain:
-      'Срок хранения — это не «сколько не жалко места», а часть требования: его задаёт назначение и закон. Плохи обе крайности: «вечно» превращает базу в бессрочную ответственность, «через год удалим всё» нарушает правила ведения медицинской документации. И самое забываемое — резервные копии: данные, «удалённые» из базы, живут в них ещё месяцами, поэтому срок жизни копий пишется рядом.',
+    hints: ['Проверьте формулировку тремя вопросами: назван ли срок, сказано ли, что происходит после него, и учтены ли резервные копии.'],
+    explain: 'Плохи обе крайности: «вечно» превращает базу в бессрочную ответственность, «через год удалим всё» нарушает правила ведения медицинской документации. И самое забываемое — резервные копии: «удалённые» данные живут в них ещё месяцами, поэтому срок жизни копий пишется рядом.',
   },
-
   {
-    id: 'pd-minimize',
-    group: 'Персональные данные',
-    title: 'Сократить состав до необходимого',
-    story:
-      'Форма записи к врачу собирает двенадцать полей. Маркетинг просил место работы, поддержка — второй телефон, разработка добавила адрес «на будущее». Конверсия формы 41%.',
+    id: 'pd-minimize', panel: 'minimize', kind: 'multi',
     prompt: 'Отметьте поля, которые для записи на приём собирать не нужно.',
-    kind: 'multi',
     options: [
       { text: 'Адрес регистрации', right: true },
       { text: 'Серия и номер паспорта', right: true },
@@ -381,51 +585,28 @@ const TASKS = [
     ],
     hints: [
       'Вопрос к каждому полю один: что сломается в записи на приём, если его не будет?',
-      'Паспорт и полис нужны в регистратуре при оказании услуги — но это другой момент и другое основание. Собирать их в форме записи «чтобы потом не спрашивать» значит хранить лишнее месяцами.',
+      'Паспорт и полис нужны в регистратуре при оказании услуги — но это другой момент и другое основание. Собирать их в форме «чтобы потом не спрашивать» значит хранить лишнее месяцами.',
     ],
-    explain:
-      'Сокращение состава — самая дешёвая мера защиты: данных, которых нет, нельзя лишиться. Каждое лишнее поле стоит дважды — конверсией формы и ответственностью за хранение. Рабочий приём в постановке: рядом с каждым полем писать, для чего оно нужно и на каком основании собирается. Половина полей отпадает на этом упражнении, вторая половина переезжает в момент, когда действительно нужна.',
+    explain: 'Сокращение состава — самая дешёвая мера защиты. Рабочий приём в постановке: рядом с каждым полем писать, для чего оно нужно и на каком основании собирается. Половина полей отпадает на этом упражнении, вторая переезжает в момент, когда действительно нужна.',
   },
-
   {
-    id: 'threat-actor',
-    group: 'Модель угроз',
-    title: 'Кто здесь нарушитель',
-    story:
-      'В клинику приходит известный человек. На следующий день в сети появляется его диагноз. Внешнего взлома не было: все входы штатные, пароли не менялись, журналы сервера чистые.',
+    id: 'threat-actor', panel: 'threat', kind: 'single',
     prompt: 'Кто нарушитель в этом сценарии?',
-    kind: 'single',
     options: [
-      {
-        text: 'Сотрудник с законным доступом, которому этот доступ не был нужен для работы',
-        right: true,
-      },
+      { text: 'Сотрудник с законным доступом, которому этот доступ не был нужен для работы', right: true },
       { text: 'Внешний злоумышленник, подобравший пароль', right: false },
       { text: 'Подрядчик, обслуживающий сервер', right: false },
       { text: 'Ошибка в коде, открывшая карты наружу', right: false },
     ],
     hints: [],
-    explain:
-      'Самая частая утечка медицинских данных — не взлом, а любопытство своих. Меры против внешнего нарушителя здесь не помогают вовсе: у человека настоящий логин и настоящее право открывать карты. Помогают другие: доступ по признаку объекта, а не «все карты всем регистраторам», журнал просмотров с разбором нетипичного, ограничение массовой выгрузки. Модель угроз начинается с вопроса «кто», потому что от ответа зависит, какие меры имеют смысл.',
+    explain: 'Самая частая утечка медицинских данных — не взлом, а любопытство своих. У человека настоящий логин и настоящее право открывать карты, поэтому помогают другие меры: доступ по признаку объекта, журнал просмотров с разбором нетипичного, ограничение массовой выгрузки.',
   },
-
   {
-    id: 'threat-measure',
-    group: 'Модель угроз',
-    title: 'Мера против угрозы',
-    story:
-      'Безопасность прислала список мер: «шифрование дисков, двухфакторная аутентификация, ссылки с ограниченным сроком, журнал доступа, проверка на сервере». Руководитель спрашивает: «От чего это спасает?»',
+    id: 'threat-measure', panel: 'threat', kind: 'match',
     prompt: 'Сопоставьте меру с угрозой, ради которой она вводится.',
-    kind: 'match',
-    choices: [
-      'Сервер или диск физически вынесли',
-      'Свой сотрудник смотрит чужие карты',
-      'Пароль подобран или утёк',
-      'Ссылку на снимок переслали наружу',
-      'Запрос из браузера подменили',
-    ],
+    choices: ['Сервер или диск вынесли', 'Свой сотрудник смотрит чужие карты', 'Пароль подобран или утёк', 'Ссылку на снимок переслали наружу', 'Запрос из браузера подменили'],
     pairs: [
-      { left: 'Шифрование дисков сервера', right: 'Сервер или диск физически вынесли' },
+      { left: 'Шифрование дисков сервера', right: 'Сервер или диск вынесли' },
       { left: 'Журнал просмотров карт и разбор нетипичного', right: 'Свой сотрудник смотрит чужие карты' },
       { left: 'Второй фактор при входе', right: 'Пароль подобран или утёк' },
       { left: 'Ссылка на снимок живёт 15 минут', right: 'Ссылку на снимок переслали наружу' },
@@ -433,20 +614,13 @@ const TASKS = [
     ],
     hints: [
       'Идите от меры к вопросу «что должно случиться, чтобы она пригодилась».',
-      'Шифрование диска не мешает сотруднику смотреть карты: он входит в систему законно, и всё расшифровано. И наоборот — журнал просмотров бесполезен, если диск вынесли.',
+      'Шифрование диска не мешает сотруднику смотреть карты: он входит законно, и всё расшифровано. И наоборот — журнал просмотров бесполезен, если диск вынесли.',
     ],
-    explain:
-      'Список мер без угроз — это покупка замков без понимания, какие двери есть в доме. Отсюда два практических правила. Первое: у каждой меры в требованиях названа угроза, от которой она спасает; мера без угрозы — расход без результата. Второе, обратное: у каждой названной угрозы есть мера, иначе её назвали зря. Обе проверки делаются за час на встрече и находят и лишнее, и пропущенное.',
+    explain: 'Список мер без угроз — покупка замков без понимания, какие двери есть в доме. Две проверки в требованиях: у каждой меры названа угроза, и у каждой угрозы есть мера. Обе делаются за час и находят и лишнее, и пропущенное.',
   },
-
   {
-    id: 'access-role-or-attribute',
-    group: 'Доступы',
-    title: 'Роль или признак объекта',
-    story:
-      'Разработчик спрашивает: «Хватит ли ролей? Или нужны правила посложнее?» Ответ зависит от формулировок, которые вы напишете.',
+    id: 'access-role-or-attribute', panel: 'access', kind: 'multi',
     prompt: 'Отметьте правила, где одной роли недостаточно.',
-    kind: 'multi',
     options: [
       { text: 'Врач видит карты только тех пациентов, которые к нему записаны', right: true },
       { text: 'Администратор управляет расписанием только своей клиники', right: true },
@@ -455,25 +629,13 @@ const TASKS = [
       { text: 'Регистратор может создавать записи на приём', right: false },
     ],
     hints: [],
-    explain:
-      'Роль отвечает на вопрос «что человек может делать вообще», признак объекта — «с какими именно записями». Как только в требовании появляются слова «свой», «своей клиники», «к нему записаны», ролей перестаёт хватать: правило зависит от связи между человеком и конкретной записью. Это не тонкость реализации, а разница в постановке: «регистратор видит карты» и «регистратор видит карты пациентов своей клиники» — два разных продукта, и второй заметно дороже.',
+    explain: 'Роль отвечает на вопрос «что человек может делать вообще», признак объекта — «с какими именно записями». «Регистратор видит карты» и «регистратор видит карты пациентов своей клиники» — два разных продукта, и второй заметно дороже.',
   },
-
   {
-    id: 'access-matrix',
-    group: 'Доступы',
-    title: 'Матрица доступа',
-    story:
-      'Перед разработкой раздела «Карта пациента» надо утвердить, кто что может. На словах все согласны; на матрице выясняется, что нет.',
+    id: 'access-matrix', panel: 'access', kind: 'grid',
     prompt: 'Отметьте разрешённые действия для каждой роли.',
-    kind: 'grid',
     rows: ['Пациент', 'Врач', 'Регистратор', 'Администратор клиники'],
-    cols: [
-      'Смотреть свою карту',
-      'Смотреть карту пациента своей клиники',
-      'Отменить чужую запись',
-      'Выгрузить список пациентов',
-    ],
+    cols: ['Смотреть свою карту', 'Смотреть карту пациента своей клиники', 'Отменить чужую запись', 'Выгрузить список пациентов'],
     right: [
       [true, false, false, false],
       [false, true, true, false],
@@ -481,45 +643,26 @@ const TASKS = [
       [false, false, true, true],
     ],
     hints: [
-      'Врач работает с картой, регистратор — с расписанием. Возможность выгрузить список — отдельное право, а не следствие того, что человек и так видит эти записи по одному.',
-      'Администратор клиники управляет работой клиники, но не лечит: доступ к медицинской части карты ему не нужен. А массовая выгрузка — именно его инструмент, и именно поэтому она отдельно журналируется.',
+      'Врач работает с картой, регистратор — с расписанием. Возможность выгрузить список — отдельное право, а не следствие того, что человек и так видит записи по одной.',
+      'Администратор клиники управляет работой клиники, но не лечит: медицинская часть карты ему не нужна. А массовая выгрузка — именно его инструмент, и поэтому она отдельно журналируется.',
     ],
-    explain:
-      'Матрица — самый дешёвый способ поссорить всех заранее, а не после релиза. Две ошибки, которые она всегда вскрывает. Первая: «видит по одному» незаметно превращается в «может выгрузить всех» — а это разные угрозы, одна из них утечка целой базы. Вторая: административные роли по привычке получают всё, включая медицинскую часть, хотя работа у них другая. Пустая клетка в матрице — тоже решение, и его стоит проговорить вслух.',
+    explain: 'Матрица вскрывает две ошибки. Первая: «видит по одному» незаметно превращается в «может выгрузить всех» — а это утечка целой базы. Вторая: административные роли по привычке получают всё, включая медицинскую часть. Пустая клетка — тоже решение, и его стоит проговорить вслух.',
   },
-
   {
-    id: 'access-own-records',
-    group: 'Доступы',
-    title: 'Свои и чужие записи',
-    story:
-      'В личном кабинете пациент открывает результаты анализов. Адрес страницы выглядит так: /results?patient=10482. Тестировщик меняет число на 10483 и видит чужие анализы.',
-    prompt: 'Какое требование закрывает эту дыру?',
-    kind: 'single',
+    id: 'access-own-records', panel: 'access', kind: 'single',
+    prompt: 'Какое требование закрывает дыру с чужим идентификатором?',
     options: [
-      {
-        text: 'Сервер определяет пациента по сессии, а идентификатор из адреса используется только для проверки: не совпал — 404, и это записывается в журнал',
-        right: true,
-      },
+      { text: 'Сервер определяет пациента по сессии, а идентификатор из адреса используется только для проверки: не совпал — 404, и это записывается в журнал', right: true },
       { text: 'Убрать идентификатор из адреса и передавать его в теле запроса', right: false },
       { text: 'Скрыть чужие результаты в интерфейсе и не показывать ссылку на них', right: false },
       { text: 'Зашифровать идентификатор, чтобы его нельзя было подобрать', right: false },
     ],
-    hints: [
-      'Всё, что приходит из браузера, человек может изменить — включая тело запроса и «зашифрованный» идентификатор. Вопрос в том, откуда сервер узнаёт, кто перед ним.',
-    ],
-    explain:
-      'Это самая распространённая уязвимость веб-систем: доступ к чужому объекту по подставленному идентификатору. Лечится не прятками, а источником истины: кто перед нами, сервер знает из сессии, а не из параметра. Остальные варианты усложняют подбор, но не запрещают доступ. Две детали, которые стоит написать прямо в требовании: отвечать «не найдено», а не «нет прав» — иначе по ответу можно перебирать существующие карты, — и записывать такие попытки, потому что это готовый сигнал о переборе.',
+    hints: ['Всё, что приходит из браузера, человек может изменить — включая тело запроса и «зашифрованный» идентификатор. Вопрос в том, откуда сервер узнаёт, кто перед ним.'],
+    explain: 'Лечится не прятками, а источником истины: кто перед нами, сервер знает из сессии. Две детали для требования: отвечать «не найдено», а не «нет прав» — иначе по ответу перебирают существующие карты, — и записывать такие попытки: это готовый сигнал о переборе.',
   },
-
   {
-    id: 'secret-or-setting',
-    group: 'Секреты',
-    title: 'Секрет или настройка',
-    story:
-      'В конфигурации сервиса записи двадцать значений. Часть из них можно спокойно показать на экране при демонстрации, часть — нельзя ни при каких условиях.',
+    id: 'secret-or-setting', panel: 'secrets', kind: 'multi',
     prompt: 'Отметьте то, что является секретом.',
-    kind: 'multi',
     options: [
       { text: 'Ключ доступа к платёжному шлюзу', right: true },
       { text: 'Пароль пользователя базы данных', right: true },
@@ -530,40 +673,24 @@ const TASKS = [
       { text: 'Часовой пояс клиники', right: false },
     ],
     hints: [],
-    explain:
-      'Граница простая: секрет — то, чем можно воспользоваться от имени системы. Адрес сервиса и срок жизни токена этим свойством не обладают: зная их, ничего не сделаешь. Практическое следствие — у секрета другой жизненный цикл: он не лежит в репозитории, не печатается в журнал, не пересылается в переписке и может быть заменён без выкладки новой версии. Если заменить его можно только релизом, то при утечке система будет беззащитна ровно столько, сколько идёт релиз.',
+    explain: 'Граница простая: секрет — то, чем можно воспользоваться от имени системы. У него другой жизненный цикл: не лежит в репозитории, не печатается в журнал и может быть заменён без выкладки новой версии. Если заменить можно только релизом, система беззащитна ровно столько, сколько идёт релиз.',
   },
-
   {
-    id: 'secret-hunt',
-    group: 'Секреты',
-    title: 'Найти секрет там, где его быть не должно',
-    story:
-      'Разбор инцидента: токен платёжного шлюза оказался у постороннего. Ищем, где он мог засветиться. Ниже — пять мест, которые смотрели.',
+    id: 'secret-hunt', panel: 'secrets', kind: 'lines',
     prompt: 'Отметьте места, где секрет действительно утёк.',
-    kind: 'multi',
     options: [
-      { text: 'В описании задачи в трекере: «повторить запрос с ключом sk_live_9f2c…»', right: true },
-      { text: 'В журнале сервиса печатается заголовок Authorization целиком', right: true },
-      { text: 'Файл .env с ключами закоммичен в репозиторий два года назад и потом удалён', right: true },
-      { text: 'В переписке с подрядчиком прислан скриншот настроек с видимым ключом', right: true },
-      { text: 'В журнале записан идентификатор платежа pay_7712', right: false },
+      { text: 'задача PAY-317: «повторить запрос с ключом sk_live_9f2c8a…»', src: 'трекер задач', right: true },
+      { text: 'log: POST /pay 200 · Authorization: Bearer sk_live_9f2c8a…', src: 'журнал сервиса', right: true },
+      { text: 'commit 4f1e0b: + .env (удалён в следующем коммите)', src: 'история репозитория', right: true },
+      { text: 'screenshot_настройки.png — прислан подрядчику в переписке', src: 'почта', right: true },
+      { text: 'log: POST /pay 200 · payment_id=pay_7712 · amount=2400', src: 'журнал сервиса', right: false },
     ],
-    hints: [
-      'Удалённый из репозитория файл остаётся в истории: его достаёт любой, у кого есть копия. Скриншот — такой же носитель, как текст.',
-    ],
-    explain:
-      'Секрет утекает не через взлом, а через обычную работу: задача в трекере, журнал, переписка, скриншот, история репозитория. Отсюда два требования, которые пишет аналитик. Первое: заголовки авторизации и тела запросов с ключами в журнал не попадают — маскируются на уровне записи, а не «мы стараемся не логировать». Второе: у секрета есть план замены — утёкший меняется без остановки системы, а значит, читается из хранилища секретов, а не из кода. Вопрос «как мы поменяем этот ключ в пятницу вечером» стоит задать до того, как это понадобится.',
+    hints: ['Удалённый из репозитория файл остаётся в истории: его достаёт любой, у кого есть копия. Скриншот — такой же носитель, как текст.'],
+    explain: 'Отсюда два требования, которые пишет аналитик. Первое: заголовки авторизации и тела с ключами маскируются на уровне записи в журнал, а не «мы стараемся не логировать». Второе: у секрета есть план замены — он читается из хранилища секретов, а не из кода.',
   },
-
   {
-    id: 'audit-or-log',
-    group: 'Аудит',
-    title: 'Аудит или журнал системы',
-    story:
-      'Заказчик просит «включить логирование». Разработка включает — и получает журнал, по которому невозможно ответить на вопрос «кто смотрел эту карту».',
+    id: 'audit-or-log', panel: 'audit', kind: 'multi',
     prompt: 'Отметьте события, которым место в журнале действий людей.',
-    kind: 'multi',
     options: [
       { text: 'Регистратор открыл карту пациента', right: true },
       { text: 'Администратор выгрузил список пациентов клиники', right: true },
@@ -574,18 +701,11 @@ const TASKS = [
       { text: 'Очередь писем выросла до 300 сообщений', right: false },
     ],
     hints: [],
-    explain:
-      'Это два разных журнала с разными читателями и разными сроками. Журнал системы нужен дежурному, живёт дни-недели и отвечает на вопрос «что с системой». Аудит нужен при разборе спорной ситуации, живёт годами и отвечает на вопрос «кто и что сделал с чужими данными». Их часто смешивают в одном потоке, и тогда при расследовании оказывается, что нужные события уже вытеснены техническим шумом.',
+    explain: 'Журнал системы нужен дежурному, живёт недели и отвечает на вопрос «что с системой». Аудит нужен при разборе, живёт годами и отвечает на вопрос «кто и что сделал с чужими данными». Смешанные в одном потоке, нужные события вытесняются техническим шумом.',
   },
-
   {
-    id: 'audit-scope',
-    group: 'Аудит',
-    title: 'Что писать в аудит',
-    story:
-      'Пишете требование к журналу просмотров карт. Соблазн понятен: записывать побольше — вдруг пригодится. Но журнал аудита сам становится хранилищем персональных данных.',
+    id: 'audit-scope', panel: 'audit', kind: 'multi',
     prompt: 'Отметьте то, что должно попасть в запись о просмотре карты.',
-    kind: 'multi',
     options: [
       { text: 'Кто открыл: идентификатор сотрудника и его роль на момент действия', right: true },
       { text: 'Когда: точное время с часовым поясом', right: true },
@@ -598,375 +718,819 @@ const TASKS = [
     ],
     hints: [
       'Разделите вопросы: что нужно, чтобы восстановить картину при разборе, и что из этого само является медицинской тайной.',
-      'Идентификатор карты позволяет поднять содержимое отдельно и только тем, кому это положено. Скопированное в журнал содержимое живёт годами и доступно тем, кто разбирает инциденты.',
+      'Идентификатор карты позволяет поднять содержимое отдельно и только тем, кому положено. Скопированное в журнал содержимое живёт годами и доступно тем, кто разбирает инциденты.',
     ],
-    explain:
-      'Состав аудита определяется вопросом «что понадобится при разборе»: кто, когда, с чем, откуда и был ли законный повод. Содержимое в журнал не копируется — иначе аудит превращается во вторую, менее защищённую копию медицинских карт, и утечка журнала становится утечкой диагнозов. Ещё две детали, которые стоит написать: роль фиксируется на момент действия, иначе смена должности перепишет прошлое, и сама запись неизменяема — журнал, который можно поправить, не является доказательством ни в одном разборе.',
+    explain: 'Содержимое в журнал не копируется — иначе аудит превращается во вторую, менее защищённую копию карт. Ещё две детали: роль фиксируется на момент действия, иначе смена должности перепишет прошлое, и запись неизменяема — журнал, который можно поправить, не доказательство.',
   },
 ];
 
+const byId = Object.fromEntries(TASKS.map((t) => [t.id, t]));
+
 /* ── Состояние ───────────────────────────────────────────────────────── */
 
-const STORAGE = 'privacy-trainer.v1';
+const STORAGE = 'privacy-trainer.v2';
 let state = load();
-let current = TASKS.findIndex((task) => !progressOf(task.id).done);
-if (current < 0) current = 0;
-let picked = new Set();
-let grid = new Set();
-let matched = {};
-let checked = null;
+const answer = {};   // выбранное человеком по каждому заданию
+const verdict = {};  // 'ok' | 'bad' | undefined
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE);
-    return raw === null ? {} : JSON.parse(raw);
-  } catch {
-    return {};
-  }
+function load(){
+  try { const raw = localStorage.getItem(STORAGE); return raw === null ? {} : JSON.parse(raw); }
+  catch { return {}; }
 }
-
-function save() {
-  try {
-    localStorage.setItem(STORAGE, JSON.stringify(state));
-  } catch {
-    /* приватный режим — просто не сохраняем */
-  }
+function save(){
+  try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch { /* приватный режим */ }
 }
-
-function progressOf(id) {
+function progressOf(id){
   if (state[id] === undefined) state[id] = { attempts: 0, hints: 0, done: false, accepted: false };
   return state[id];
 }
 
-/* ── Проверка ответа ─────────────────────────────────────────────────── */
+/* ── Вкладки ─────────────────────────────────────────────────────────── */
 
-function isRight(task) {
-  if (task.kind === 'single' || task.kind === 'multi') {
-    const right = new Set(task.options.map((o, i) => (o.right ? i : -1)).filter((i) => i >= 0));
-    if (picked.size !== right.size) return false;
-    for (const index of picked) if (!right.has(index)) return false;
-    return true;
+const PANELS = [
+  { id: 'data', name: 'Данные' },
+  { id: 'basis', name: 'Основания и сроки' },
+  { id: 'minimize', name: 'Состав формы' },
+  { id: 'threat', name: 'Угрозы' },
+  { id: 'access', name: 'Доступы' },
+  { id: 'secrets', name: 'Секреты' },
+  { id: 'audit', name: 'Аудит' },
+];
+
+let active = location.hash.slice(1) || 'data';
+if (!PANELS.some((p) => p.id === active)) active = 'data';
+
+function paintTabs(){
+  const box = document.getElementById('tabs');
+  box.replaceChildren();
+
+  for (const panel of PANELS) {
+    const tasks = TASKS.filter((t) => t.panel === panel.id);
+    const done = tasks.every((t) => progressOf(t.id).done) && tasks.length > 0;
+
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'tab';
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', panel.id === active ? 'true' : 'false');
+    tab.dataset.focus = 'tab:' + panel.id;
+
+    const dot = document.createElement('span');
+    dot.className = done ? 'dot done' : 'dot';
+    tab.append(dot, document.createTextNode(panel.name));
+    tab.addEventListener('click', () => show(panel.id));
+    box.append(tab);
   }
-
-  if (task.kind === 'match') {
-    return task.pairs.every((pair, index) => matched[index] === pair.right);
-  }
-
-  if (task.kind === 'grid') {
-    for (let row = 0; row < task.rows.length; row += 1) {
-      for (let col = 0; col < task.cols.length; col += 1) {
-        const should = task.right[row][col];
-        const has = grid.has(`${row}:${col}`);
-        if (should !== has) return false;
-      }
-    }
-    return true;
-  }
-
-  return false;
 }
 
-function check() {
-  const task = TASKS[current];
-  const progress = progressOf(task.id);
-  const ok = isRight(task);
-
-  progress.attempts += 1;
-  checked = ok ? 'ok' : 'bad';
-
-  if (ok && !progress.done) {
-    progress.done = true;
-    // Попытки и подсказки уходят как есть: платформа сама решит, насколько
-    // это снижает вес доказательства.
-    bridge.solved(task.id, Math.min(progress.attempts, 99), progress.hints);
+function show(id){
+  active = id;
+  history.replaceState(null, '', '#' + id);
+  for (const panel of PANELS) {
+    document.getElementById(panel.id).classList.toggle('active', panel.id === id);
   }
-
-  save();
-  render();
+  paintTabs();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openHint() {
-  const task = TASKS[current];
-  const progress = progressOf(task.id);
-  if (progress.hints >= task.hints.length) return;
-  progress.hints += 1;
-  save();
-  render();
+for (const button of document.querySelectorAll('.go')) {
+  button.addEventListener('click', () => show(button.dataset.goto));
 }
 
-function go(index) {
-  current = index;
-  picked = new Set();
-  grid = new Set();
-  matched = {};
-  checked = null;
-  render();
+/* ── Тема ────────────────────────────────────────────────────────────── */
+
+const THEMES = ['авто', 'светлая', 'тёмная'];
+let theme = localStorage.getItem('privacy-trainer.theme') || 'авто';
+
+function paintTheme(){
+  const root = document.documentElement;
+  if (theme === 'авто') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', theme === 'светлая' ? 'light' : 'dark');
+  document.getElementById('theme').textContent = 'тема: ' + theme;
 }
+document.getElementById('theme').addEventListener('click', () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+  localStorage.setItem('privacy-trainer.theme', theme);
+  paintTheme();
+});
+paintTheme();
 
-/* ── Отрисовка ───────────────────────────────────────────────────────── */
+/* ── Отрисовка заданий ───────────────────────────────────────────────── */
 
-function element(tag, props = {}, children = []) {
+function el(tag, props = {}, children = []){
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(props)) {
     if (key === 'class') node.className = value;
     else if (key === 'text') node.textContent = value;
+    else if (key === 'html') node.innerHTML = value;
     else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
-    else if (value !== null && value !== false) node.setAttribute(key, value === true ? '' : value);
+    else if (value !== null && value !== false && value !== undefined) node.setAttribute(key, value === true ? '' : value);
   }
   for (const child of children) node.append(child);
   return node;
 }
 
-/*
-  Отрисовка перебирает разметку целиком, и после каждого нажатия фокус уезжал
-  в начало документа: человеку с клавиатуры приходилось добираться до списка
-  заново после каждой отметки. Поэтому у каждого элемента управления есть ключ,
-  по которому фокус возвращается на место.
-*/
-function focusKey() {
-  const active = document.activeElement;
-  return active === null ? null : active.getAttribute('data-focus');
+function focusKey(){
+  const node = document.activeElement;
+  // Проверяем способность, а не тип: в разных средах activeElement бывает
+  // и null, и undefined, и телом документа — падать на этом нельзя.
+  return node && typeof node.getAttribute === 'function' ? node.getAttribute('data-focus') : null;
 }
-
-function restoreFocus(key) {
+function restoreFocus(key){
   if (key === null) return;
-  const back = document.querySelector(`[data-focus="${key}"]`);
+  const back = document.querySelector('[data-focus="' + key + '"]');
   if (back !== null) back.focus();
 }
 
-function renderMenu() {
-  const menu = document.getElementById('menu');
-  menu.replaceChildren();
-
-  let group = null;
-  TASKS.forEach((task, index) => {
-    if (task.group !== group) {
-      group = task.group;
-      menu.append(element('h2', { text: group }));
-    }
-
-    const done = progressOf(task.id).done;
-    menu.append(
-      element(
-        'button',
-        {
-          type: 'button',
-          'data-focus': `menu:${index}`,
-          'aria-current': index === current ? 'true' : 'false',
-          onclick: () => go(index),
-        },
-        [
-          element('span', { class: done ? 'dot done' : 'dot', 'aria-hidden': true }),
-          element('span', { text: task.title }),
-        ],
-      ),
-    );
-  });
+function selectionOf(task){
+  if (answer[task.id] === undefined) {
+    answer[task.id] = task.kind === 'match' ? {} : new Set();
+  }
+  return answer[task.id];
 }
 
-function renderOptions(task) {
-  const list = element('ul', { class: 'opts' });
+function isRight(task){
+  const picked = selectionOf(task);
 
-  task.options.forEach((option, index) => {
-    const selected = picked.has(index);
-    let extra = '';
-    let mark = '';
-
-    if (checked !== null) {
-      if (option.right) {
-        extra = ' right';
-        mark = selected ? '✓' : '· верно';
-      } else if (selected) {
-        extra = ' wrong';
-        mark = '✕';
+  if (task.kind === 'single' || task.kind === 'multi' || task.kind === 'lines') {
+    const right = new Set(task.options.map((o, i) => (o.right ? i : -1)).filter((i) => i >= 0));
+    if (picked.size !== right.size) return false;
+    for (const index of picked) if (!right.has(index)) return false;
+    return true;
+  }
+  if (task.kind === 'match') {
+    return task.pairs.every((pair, index) => picked[index] === pair.right);
+  }
+  if (task.kind === 'grid') {
+    for (let r = 0; r < task.rows.length; r += 1) {
+      for (let c = 0; c < task.cols.length; c += 1) {
+        if (task.right[r][c] !== picked.has(r + ':' + c)) return false;
       }
     }
-
-    const button = element('button', {
-      type: 'button',
-      class: `opt${extra}`,
-      'data-focus': `opt:${index}`,
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => {
-        if (task.kind === 'single') picked = selected ? new Set() : new Set([index]);
-        else if (selected) picked.delete(index);
-        else picked.add(index);
-        checked = null;
-        render();
-      },
-    });
-
-    button.append(element('span', { text: option.text }));
-    if (mark !== '') button.append(element('span', { class: 'mark', text: mark }));
-
-    list.append(element('li', {}, [button]));
-  });
-
-  return list;
+    return true;
+  }
+  return false;
 }
 
-function renderMatch(task) {
-  const box = element('div', { class: 'match' });
-
-  task.pairs.forEach((pair, index) => {
-    const select = element('select', {
-      'aria-label': pair.left,
-      'data-focus': `match:${index}`,
-      onchange: (event) => {
-        matched[index] = event.target.value;
-        checked = null;
-        render();
-      },
-    });
-
-    select.append(element('option', { value: '', text: '— выберите —' }));
-    for (const choice of task.choices) {
-      select.append(element('option', { value: choice, text: choice, ...(matched[index] === choice ? { selected: true } : {}) }));
-    }
-
-    if (checked !== null) select.className = matched[index] === pair.right ? 'right' : 'wrong';
-
-    box.append(
-      element('div', { class: 'pair' }, [element('div', { class: 'left', text: pair.left }), select]),
-    );
-  });
-
-  return box;
-}
-
-function renderGrid(task) {
-  const table = element('table', { class: 'grid' });
-  const head = element('tr', {}, [element('th', { text: 'Роль' })]);
-  for (const col of task.cols) head.append(element('th', { text: col }));
-  table.append(head);
-
-  task.rows.forEach((row, rowIndex) => {
-    const tr = element('tr', {}, [element('th', { text: row })]);
-
-    task.cols.forEach((col, colIndex) => {
-      const key = `${rowIndex}:${colIndex}`;
-      const selected = grid.has(key);
-      let extra = '';
-
-      if (checked !== null) {
-        const should = task.right[rowIndex][colIndex];
-        if (should === selected) extra = ' right';
-        else extra = ' wrong';
-      }
-
-      const button = element('button', {
-        type: 'button',
-        class: extra.trim(),
-        'data-focus': `grid:${key}`,
-        'aria-pressed': selected ? 'true' : 'false',
-        'aria-label': `${row}: ${col}`,
-        text: selected ? '✓' : '',
-        onclick: () => {
-          if (selected) grid.delete(key);
-          else grid.add(key);
-          checked = null;
-          render();
-        },
-      });
-
-      tr.append(element('td', {}, [button]));
-    });
-
-    table.append(tr);
-  });
-
-  return table;
-}
-
-function render() {
-  const task = TASKS[current];
+function check(task){
   const progress = progressOf(task.id);
-  const done = TASKS.filter((one) => progressOf(one.id).done).length;
-  const keep = focusKey();
+  const ok = isRight(task);
 
-  document.getElementById('score').textContent = `решено ${done} из ${TASKS.length}`;
-  document.getElementById('progress').style.width = `${(done / TASKS.length) * 100}%`;
+  progress.attempts += 1;
+  verdict[task.id] = ok ? 'ok' : 'bad';
 
-  renderMenu();
+  if (ok && !progress.done) {
+    progress.done = true;
+    bridge.solved(task.id, Math.min(progress.attempts, 99), progress.hints);
+  }
+  save();
+  paintAll();
+}
 
-  const card = document.getElementById('task');
-  card.replaceChildren();
+function openHint(task){
+  const progress = progressOf(task.id);
+  if (progress.hints >= task.hints.length) return;
+  progress.hints += 1;
+  save();
+  paintAll();
+}
 
-  card.append(element('span', { class: 'eyebrow', text: task.group }));
-  card.append(element('h2', { class: 'title', text: task.title }));
-  card.append(element('p', { class: 'story', text: task.story }));
-  card.append(element('p', { class: 'prompt', text: task.prompt }));
+function paintOptions(task, box){
+  const picked = selectionOf(task);
+  const shown = verdict[task.id];
 
-  if (task.kind === 'match') card.append(renderMatch(task));
-  else if (task.kind === 'grid') card.append(renderGrid(task));
-  else card.append(renderOptions(task));
+  if (task.kind === 'lines') {
+    const lines = el('div', { class: 'lines' });
+    task.options.forEach((option, index) => {
+      const chosen = picked.has(index);
+      let cls = '';
+      if (shown !== undefined) cls = option.right ? ' right' : (chosen ? ' wrong' : '');
+
+      const button = el('button', {
+        type: 'button', class: 'line' + cls, 'aria-pressed': chosen ? 'true' : 'false',
+        'data-focus': 'line:' + task.id + ':' + index,
+        onclick: () => { chosen ? picked.delete(index) : picked.add(index); verdict[task.id] = undefined; paintAll(); },
+      });
+      button.append(el('span', { text: option.text }));
+      button.append(el('span', { class: 'src', text: option.src + (shown !== undefined ? (option.right ? ' · секрет здесь' : ' · чисто') : '') }));
+      lines.append(button);
+    });
+    box.append(lines);
+    return;
+  }
+
+  if (task.kind === 'match') {
+    const wrap = el('div', { class: 'match' });
+    task.pairs.forEach((pair, index) => {
+      const select = el('select', {
+        'aria-label': pair.left, 'data-focus': 'match:' + task.id + ':' + index,
+        onchange: (event) => { picked[index] = event.target.value; verdict[task.id] = undefined; paintAll(); },
+      });
+      select.append(el('option', { value: '', text: '— выберите —' }));
+      for (const choice of task.choices) {
+        const option = el('option', { value: choice, text: choice });
+        if (picked[index] === choice) option.setAttribute('selected', '');
+        select.append(option);
+      }
+      if (shown !== undefined) select.className = picked[index] === pair.right ? 'right' : 'wrong';
+      wrap.append(el('div', { class: 'pair' }, [el('div', { class: 'left', text: pair.left }), select]));
+    });
+    box.append(wrap);
+    return;
+  }
+
+  if (task.kind === 'grid') {
+    const wrap = el('div', { class: 'table-wrap' });
+    const table = el('table', { class: 'db' });
+    const head = el('tr', {}, [el('th', { text: 'Роль' })]);
+    for (const col of task.cols) head.append(el('th', { text: col }));
+    table.append(el('thead', {}, [head]));
+
+    const body = el('tbody');
+    task.rows.forEach((row, r) => {
+      const tr = el('tr', {}, [el('th', { text: row })]);
+      task.cols.forEach((col, c) => {
+        const key = r + ':' + c;
+        const chosen = picked.has(key);
+        let cls = 'cell-btn';
+        if (shown !== undefined) cls += task.right[r][c] === chosen ? ' right' : ' wrong';
+
+        const button = el('button', {
+          type: 'button', class: cls, 'aria-pressed': chosen ? 'true' : 'false',
+          'aria-label': row + ': ' + col, text: chosen ? '✓' : '',
+          'data-focus': 'grid:' + task.id + ':' + key,
+          onclick: () => { chosen ? picked.delete(key) : picked.add(key); verdict[task.id] = undefined; paintAll(); },
+        });
+        tr.append(el('td', { class: 'mid' }, [button]));
+      });
+      body.append(tr);
+    });
+    table.append(body);
+    wrap.append(table);
+    box.append(wrap);
+    return;
+  }
+
+  const list = el('ul', { class: 'opts' });
+  task.options.forEach((option, index) => {
+    const chosen = picked.has(index);
+    let cls = '';
+    let mark = '';
+    if (shown !== undefined) {
+      if (option.right) { cls = ' right'; mark = chosen ? '✓' : 'верно'; }
+      else if (chosen) { cls = ' wrong'; mark = '✕'; }
+    }
+    const button = el('button', {
+      type: 'button', class: cls.trim(), 'aria-pressed': chosen ? 'true' : 'false',
+      'data-focus': 'opt:' + task.id + ':' + index,
+      onclick: () => {
+        if (task.kind === 'single') { const had = chosen; picked.clear(); if (!had) picked.add(index); }
+        else if (chosen) picked.delete(index);
+        else picked.add(index);
+        verdict[task.id] = undefined;
+        paintAll();
+      },
+    }, [el('span', { text: option.text })]);
+    if (mark !== '') button.append(el('span', { class: 'mk', text: mark }));
+    list.append(el('li', {}, [button]));
+  });
+  box.append(list);
+}
+
+function paintTask(task){
+  const box = document.getElementById('t-' + task.id);
+  if (box === null) return;
+
+  const progress = progressOf(task.id);
+  box.replaceChildren();
+  box.append(el('p', { class: 'sub', text: task.prompt, style: 'margin:0 0 12px' }));
+
+  paintOptions(task, box);
 
   for (let i = 0; i < progress.hints; i += 1) {
-    card.append(element('p', { class: 'note note--hint', text: `Подсказка ${i + 1}. ${task.hints[i]}` }));
+    box.append(el('div', { class: 'note warn', html: '<b>Подсказка ' + (i + 1) + '.</b> ' + task.hints[i] }));
   }
 
-  const actions = element('div', { class: 'row' });
-
-  actions.append(
-    element('button', {
-      type: 'button',
-      class: 'btn',
-      'data-focus': 'act:check',
-      text: progress.done ? 'Проверить снова' : 'Проверить',
-      onclick: check,
-    }),
-  );
-
+  const row = el('div', { class: 'form-row' });
+  row.append(el('button', {
+    type: 'button', class: 'act', 'data-focus': 'check:' + task.id,
+    text: progress.done ? 'Проверить снова' : 'Проверить',
+    onclick: () => check(task),
+  }));
   if (progress.hints < task.hints.length) {
-    actions.append(
-      element('button', {
-        type: 'button',
-        class: 'btn ghost',
-        'data-focus': 'act:hint',
-        text: progress.hints === 0 ? 'Подсказка' : 'Ещё подсказка',
-        onclick: openHint,
-      }),
-    );
+    row.append(el('button', {
+      type: 'button', class: 'act ghost', 'data-focus': 'hint:' + task.id,
+      text: progress.hints === 0 ? 'Подсказка' : 'Ещё подсказка',
+      onclick: () => openHint(task),
+    }));
   }
-
-  if (current < TASKS.length - 1) {
-    actions.append(
-      element('button', {
-        type: 'button',
-        class: 'btn ghost',
-        'data-focus': 'act:next',
-        text: 'Следующее →',
-        onclick: () => go(current + 1),
-      }),
-    );
-  }
-
-  card.append(actions);
+  box.append(row);
 
   if (progress.attempts > 0) {
-    const parts = [`попыток: ${progress.attempts}`];
-    if (task.hints.length > 0) parts.push(`подсказок: ${progress.hints} из ${task.hints.length}`);
-    if (progress.accepted) parts.push('зачтено в профиль навыков');
-    card.append(element('p', { class: 'meta', text: parts.join(' · ') }));
+    const parts = ['попыток: ' + progress.attempts];
+    if (task.hints.length > 0) parts.push('подсказок: ' + progress.hints + ' из ' + task.hints.length);
+    if (progress.accepted) parts.push('зачтено в профиль');
+    box.append(el('div', { class: 'meta', text: parts.join(' · ') }));
   }
 
-  if (checked === 'ok') {
-    card.append(element('p', { class: 'note note--ok', text: `Верно. ${task.explain}` }));
+  if (verdict[task.id] === 'ok') {
+    box.append(el('div', { class: 'note ok', html: '<b>Верно.</b> ' + task.explain }));
+  }
+  if (verdict[task.id] === 'bad') {
+    box.append(el('div', { class: 'note bad', html: '<b>Пока не сходится.</b> Верное подсвечено зелёным, лишнее — красным. Поправьте и проверьте снова.' }));
+  }
+}
+
+/* ── Симулятор обезличивания ─────────────────────────────────────────── */
+
+const ANON = [
+  { id: 'year', name: 'год рождения', groups: 70 },
+  { id: 'city', name: 'город', groups: 12 },
+  { id: 'sex', name: 'пол', groups: 2 },
+  { id: 'visit', name: 'дата приёма', groups: 240 },
+  { id: 'doctor', name: 'врач', groups: 40 },
+];
+const anonPicked = new Set(['year']);
+
+function paintAnon(){
+  const chips = document.getElementById('anon-chips');
+  chips.replaceChildren();
+
+  for (const field of ANON) {
+    const on = anonPicked.has(field.id);
+    chips.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false',
+      'data-focus': 'anon:' + field.id,
+      onclick: () => { on ? anonPicked.delete(field.id) : anonPicked.add(field.id); paintAll(); },
+    }, [el('span', { text: field.name })]));
   }
 
-  if (checked === 'bad') {
-    card.append(
-      element('p', {
-        class: 'note note--bad',
-        text: 'Пока не сходится. Неверно отмеченное подсвечено, верное — зелёным контуром. Исправьте и проверьте снова.',
-      }),
-    );
+  const total = 5000;
+  let groups = 1;
+  for (const field of ANON) if (anonPicked.has(field.id)) groups *= field.groups;
+
+  const perGroup = total / groups;
+  const unique = Math.min(1, 1 / Math.max(perGroup, 1));
+  const uniquePeople = Math.min(total, Math.round(total * (groups >= total ? 1 : unique)));
+
+  document.getElementById('anon-out').textContent =
+    'строк в выгрузке:        ' + total + '\n' +
+    'различимых сочетаний:    ' + groups.toLocaleString('ru') + '\n' +
+    'человек в группе:        ' + (perGroup >= 1 ? perGroup.toFixed(1) : 'меньше одного') + '\n' +
+    'выделяются однозначно:   ' + uniquePeople + ' из ' + total;
+
+  const note = document.getElementById('anon-note');
+  if (perGroup >= 20) {
+    note.className = 'note ok';
+    note.innerHTML = '<b>Похоже на обезличенное.</b> В каждой группе десятки людей — по строке нельзя сказать, чья она. Такую выгрузку можно отдавать аналитикам.';
+  } else if (perGroup >= 2) {
+    note.className = 'note warn';
+    note.innerHTML = '<b>Уже рискованно.</b> В группе единицы людей. Достаточно одного внешнего факта — кто из знакомых был в клинике в этот день, — и строка становится именной.';
+  } else {
+    note.className = 'note bad';
+    note.innerHTML = '<b>Это персональные данные.</b> Сочетание признаков выделяет конкретного человека, даже если имени в выгрузке нет. Обезличивание — это не «убрали ФИО», а «в группе не меньше десятка похожих».';
   }
+
+  document.getElementById('anon-kv').innerHTML =
+    '<span class="k">вывод</span><span class="v">' +
+    (perGroup >= 20 ? 'выгрузка допустима' : 'нужно огрублять: год вместо даты, регион вместо города') +
+    '</span>';
+}
+
+/* ── Симулятор отзыва согласия ───────────────────────────────────────── */
+
+let consentGiven = true;
+
+const CONSENT_ROWS = [
+  { what: 'запись к врачу и напоминание', basis: 'договор', stops: false },
+  { what: 'сведения в страховую по ОМС', basis: 'закон', stops: false },
+  { what: 'медицинская карта и приёмы', basis: 'закон', stops: false },
+  { what: 'рассылка с акциями', basis: 'согласие', stops: true },
+  { what: 'запись разговора с оператором', basis: 'согласие', stops: true },
+];
+
+function paintConsent(){
+  const out = CONSENT_ROWS.map((row) => {
+    const stopped = consentGiven === false && row.stops;
+    const status = stopped ? 'ОСТАНОВЛЕНО' : 'продолжается';
+    return (row.what + ' ').padEnd(34, '·') + ' ' + row.basis.padEnd(9) + status;
+  }).join('\n');
+
+  document.getElementById('consent-out').textContent = out;
+
+  const note = document.getElementById('consent-note');
+  if (consentGiven) {
+    note.className = 'note';
+    note.innerHTML = '<b>Согласие есть.</b> Работает всё. Важно другое: система обязана знать, <i>что именно</i> держится на согласии, — иначе в момент отзыва выключить будет нечего.';
+  } else {
+    note.className = 'note ok';
+    note.innerHTML = '<b>Согласие отозвано.</b> Рассылка и запись разговоров прекращаются, карта и передача в страховую — нет: они держатся на законе, а запись к врачу — на договоре. Требование обязано называть основание для каждого куска данных, иначе отзыв невозможно реализовать.';
+  }
+}
+
+document.getElementById('consent-btn').addEventListener('click', () => { consentGiven = false; paintAll(); });
+document.getElementById('consent-reset').addEventListener('click', () => { consentGiven = true; paintAll(); });
+
+/* ── Симулятор хранения ──────────────────────────────────────────────── */
+
+let retMode = 'good';
+
+function paintRetention(){
+  const years = Number(document.getElementById('ret-slider').value);
+  const chips = document.getElementById('ret-mode');
+  chips.replaceChildren();
+
+  for (const mode of [['good', 'срок + обезличивание + копии'], ['forever', 'храним бессрочно'], ['year', 'удаляем всё через год']]) {
+    chips.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': retMode === mode[0] ? 'true' : 'false',
+      'data-focus': 'ret:' + mode[0],
+      onclick: () => { retMode = mode[0]; paintAll(); },
+    }, [el('span', { text: mode[1] })]));
+  }
+
+  let card, mart, backup, verdictText, cls;
+
+  if (retMode === 'good') {
+    const kept = years < 5;
+    card = kept ? 'карта хранится целиком' : 'карта обезличена: имя и контакты убраны';
+    mart = kept ? 'в витрине идентификаторы' : 'в витрине только агрегаты';
+    backup = 'копии старше 30 дней стёрты';
+    cls = 'note ok';
+    verdictText = kept
+      ? 'В пределах срока: данные нужны для оказания помощи и отчётности.'
+      : 'Срок вышел — данные обезличены, аналитика продолжает работать на агрегатах.';
+  } else if (retMode === 'forever') {
+    card = 'карта хранится целиком';
+    mart = 'в витрине идентификаторы';
+    backup = 'копии за все ' + Math.max(years, 1) + ' лет';
+    cls = years >= 3 ? 'note bad' : 'note warn';
+    verdictText = 'Ответственность растёт вместе с объёмом: утечка через восемь лет — это утечка всех, кто когда-либо приходил. И удалить по запросу нечего: процедуры нет.';
+  } else {
+    card = years >= 1 ? 'карта удалена целиком' : 'карта хранится';
+    mart = years >= 1 ? 'история в витрине оборвана' : 'в витрине идентификаторы';
+    backup = years >= 1 ? 'копии удалены' : 'копии живут';
+    cls = years >= 1 ? 'note bad' : 'note warn';
+    verdictText = 'Медицинскую документацию нельзя удалять по своему усмотрению: сроки заданы снаружи. Заодно исчезла история, по которой врач видит, чем человек болел.';
+  }
+
+  document.getElementById('ret-out').textContent =
+    'прошло лет с последнего приёма: ' + years + '\n\n' +
+    'карта:            ' + card + '\n' +
+    'витрина:          ' + mart + '\n' +
+    'резервные копии:  ' + backup;
+
+  const note = document.getElementById('ret-note');
+  note.className = cls;
+  note.innerHTML = '<b>Что видно.</b> ' + verdictText;
+}
+
+document.getElementById('ret-slider').addEventListener('input', paintAll);
+
+/* ── Конструктор формы ───────────────────────────────────────────────── */
+
+const FIELDS = [
+  { id: 'name', name: 'ФИО', need: true, risk: 1 },
+  { id: 'phone', name: 'телефон', need: true, risk: 1 },
+  { id: 'birth', name: 'дата рождения', need: true, risk: 1 },
+  { id: 'policy', name: 'полис ОМС', need: true, risk: 2 },
+  { id: 'address', name: 'адрес регистрации', need: false, risk: 3 },
+  { id: 'passport', name: 'паспорт', need: false, risk: 4 },
+  { id: 'work', name: 'место работы', need: false, risk: 2 },
+  { id: 'family', name: 'семейное положение', need: false, risk: 2 },
+  { id: 'relative', name: 'телефон родственника', need: false, risk: 3 },
+];
+const formOn = new Set(FIELDS.map((f) => f.id));
+
+function paintForm(){
+  const chips = document.getElementById('form-chips');
+  chips.replaceChildren();
+
+  for (const field of FIELDS) {
+    const on = formOn.has(field.id);
+    chips.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false',
+      'data-focus': 'form:' + field.id,
+      onclick: () => { on ? formOn.delete(field.id) : formOn.add(field.id); paintAll(); },
+    }, [el('span', { text: field.name })]));
+  }
+
+  const missing = FIELDS.filter((f) => f.need && !formOn.has(f.id));
+  const extra = FIELDS.filter((f) => !f.need && formOn.has(f.id));
+  const risk = FIELDS.filter((f) => formOn.has(f.id)).reduce((sum, f) => sum + f.risk, 0);
+  const fields = formOn.size;
+  const conversion = Math.max(25, 86 - (fields - 4) * 6);
+
+  document.getElementById('form-out').textContent =
+    'полей в форме:        ' + fields + '\n' +
+    'услугу оказать:       ' + (missing.length === 0 ? 'можно' : 'нельзя — нет ' + missing.map((f) => f.name).join(', ')) + '\n' +
+    'лишнее в хранении:    ' + (extra.length === 0 ? 'ничего' : extra.map((f) => f.name).join(', ')) + '\n' +
+    'что утечёт при утечке: ' + FIELDS.filter((f) => formOn.has(f.id)).map((f) => f.name).join(', ');
+
+  document.getElementById('form-kv').innerHTML =
+    '<span class="k">доходимость</span><span class="v">≈ ' + conversion + '%</span>' +
+    '<span class="k">цена утечки</span><span class="v">' + risk + ' условных единиц вреда</span>';
+
+  const note = document.getElementById('form-note');
+  if (missing.length > 0) {
+    note.className = 'note bad';
+    note.innerHTML = '<b>Слишком коротко.</b> Минимизация — не «убрать всё», а «оставить необходимое». Без ' + missing.map((f) => f.name).join(', ') + ' запись на приём не выполняется.';
+  } else if (extra.length === 0) {
+    note.className = 'note ok';
+    note.innerHTML = '<b>Это и есть минимизация.</b> Всё, что осталось, нужно для услуги, и каждое поле объяснимо. Паспорт и адрес спрашиваются в регистратуре — в другой момент и по другому основанию.';
+  } else {
+    note.className = 'note warn';
+    note.innerHTML = '<b>Лишнее ещё осталось.</b> Каждое такое поле стоит дважды: доходимостью формы сейчас и ответственностью за хранение потом.';
+  }
+}
+
+/* ── Доска мер и угроз ───────────────────────────────────────────────── */
+
+const THREATS = ['вынесли диск', 'свой смотрит чужие карты', 'подобрали пароль', 'ссылку переслали', 'подменили запрос'];
+const MEASURES = [
+  { id: 'crypt', name: 'шифрование дисков', covers: [0] },
+  { id: 'audit', name: 'журнал просмотров', covers: [1] },
+  { id: 'mfa', name: 'второй фактор', covers: [2] },
+  { id: 'ttl', name: 'ссылка на 15 минут', covers: [3] },
+  { id: 'server', name: 'проверка прав на сервере', covers: [4] },
+  { id: 'policy', name: 'политика ИБ на 40 страниц', covers: [] },
+];
+let measurePicked = 'crypt';
+
+function paintMeasures(){
+  const chips = document.getElementById('measure-chips');
+  chips.replaceChildren();
+
+  for (const measure of MEASURES) {
+    chips.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': measurePicked === measure.id ? 'true' : 'false',
+      'data-focus': 'measure:' + measure.id,
+      onclick: () => { measurePicked = measure.id; paintAll(); },
+    }, [el('span', { text: measure.name })]));
+  }
+
+  const measure = MEASURES.find((m) => m.id === measurePicked);
+  document.getElementById('measure-out').textContent = THREATS
+    .map((threat, index) => (measure.covers.includes(index) ? '✓ закрыта   ' : '·  открыта  ') + threat)
+    .join('\n');
+
+  const note = document.getElementById('measure-note');
+  if (measure.covers.length === 0) {
+    note.className = 'note bad';
+    note.innerHTML = '<b>Мера-пустышка.</b> Документ не закрывает ни одной угрозы из списка — он описывает, кто за что отвечает. Полезен для порядка, бесполезен как защита. Мера без названной угрозы — расход без результата.';
+  } else {
+    note.className = 'note';
+    note.innerHTML = '<b>Одна мера — одна угроза.</b> ' + measure.name[0].toUpperCase() + measure.name.slice(1) +
+      ' не помогает против остальных четырёх: шифрование не мешает своему сотруднику, а журнал не вернёт вынесенный диск. Отсюда правило: у каждой угрозы своя мера, и наоборот.';
+  }
+}
+
+/* ── Симулятор чужого идентификатора ─────────────────────────────────── */
+
+const IDOR_MODES = [
+  { id: 'hide', name: 'прячем ссылку в интерфейсе' },
+  { id: 'body', name: 'идентификатор в теле запроса' },
+  { id: 'encrypt', name: 'шифруем идентификатор' },
+  { id: 'session', name: 'проверка по сессии на сервере' },
+];
+const IDOR_REQS = [
+  { id: 'own', name: 'свои: patient=10482' },
+  { id: 'other', name: 'чужие: patient=10483' },
+];
+let idorMode = 'hide';
+let idorReq = 'other';
+
+function paintIdor(){
+  const modes = document.getElementById('idor-chips');
+  modes.replaceChildren();
+  for (const mode of IDOR_MODES) {
+    modes.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': idorMode === mode.id ? 'true' : 'false',
+      'data-focus': 'idor:' + mode.id,
+      onclick: () => { idorMode = mode.id; paintAll(); },
+    }, [el('span', { text: mode.name })]));
+  }
+
+  const reqs = document.getElementById('idor-req');
+  reqs.replaceChildren();
+  for (const req of IDOR_REQS) {
+    reqs.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': idorReq === req.id ? 'true' : 'false',
+      'data-focus': 'idorreq:' + req.id,
+      onclick: () => { idorReq = req.id; paintAll(); },
+    }, [el('span', { text: req.name })]));
+  }
+
+  const own = idorReq === 'own';
+  const safe = idorMode === 'session';
+  let status, body, explain, cls;
+
+  if (own) {
+    status = '200 OK';
+    body = '{ "patient": 10482, "results": [ ... ] }';
+    explain = 'Свои результаты открываются при любой реализации — разница видна только на чужих.';
+    cls = 'note';
+  } else if (safe) {
+    status = '404 Not Found';
+    body = '{ "type": "not-found", "title": "Результаты не найдены" }\n\n' +
+      'audit: попытка доступа к чужой карте, account=10482, target=10483';
+    explain = 'Сервер берёт пациента из сессии, а число из адреса использует только для сверки. Ответ «не найдено», а не «нет прав»: иначе по ответу перебирают существующие карты. Попытка записана — это готовый сигнал о переборе.';
+    cls = 'note ok';
+  } else {
+    status = '200 OK';
+    body = '{ "patient": 10483, "results": [ "СПИД-тест: ...", ... ] }';
+    explain = idorMode === 'hide'
+      ? 'Ссылку спрятали в интерфейсе, но адрес по-прежнему работает: достаточно набрать его руками.'
+      : idorMode === 'body'
+        ? 'Тело запроса человек меняет так же легко, как адрес: инструменты разработчика открываются на F12.'
+        : 'Шифрование идентификатора усложняет подбор и не запрещает доступ: перехваченный чужой идентификатор работает как свой.';
+    cls = 'note bad';
+  }
+
+  document.getElementById('idor-out').textContent =
+    'GET /results?patient=' + (own ? '10482' : '10483') + '\n' +
+    'сессия: пациент 10482\n\n' + status + '\n' + body;
+
+  const note = document.getElementById('idor-note');
+  note.className = cls;
+  note.innerHTML = '<b>Что происходит.</b> ' + explain;
+}
+
+/* ── Сценарии по матрице ─────────────────────────────────────────────── */
+
+const SCENARIOS = [
+  { text: 'Пациент открывает свою карту', row: 0, col: 0, allow: true },
+  { text: 'Врач открывает карту пациента своей клиники', row: 1, col: 1, allow: true },
+  { text: 'Регистратор открывает карту пациента', row: 2, col: 1, allow: false },
+  { text: 'Регистратор отменяет запись пациента', row: 2, col: 2, allow: true },
+  { text: 'Администратор выгружает список пациентов', row: 3, col: 3, allow: true },
+  { text: 'Врач выгружает список пациентов клиники', row: 1, col: 3, allow: false },
+];
+
+document.getElementById('run-scenarios').addEventListener('click', () => {
+  const task = byId['access-matrix'];
+  const picked = selectionOf(task);
+
+  const lines = SCENARIOS.map((one) => {
+    const allowed = picked.has(one.row + ':' + one.col);
+    const ok = allowed === one.allow;
+    return (ok ? '✓ ' : '✕ ') + one.text + '\n   ваша матрица: ' + (allowed ? 'разрешено' : 'запрещено') +
+      ' · должно быть: ' + (one.allow ? 'разрешено' : 'запрещено');
+  });
+
+  const wrong = SCENARIOS.filter((one, i) => (picked.has(one.row + ':' + one.col)) !== one.allow).length;
+
+  document.getElementById('scen-out').textContent =
+    lines.join('\n') + '\n\n' +
+    (wrong === 0
+      ? 'Все шесть сценариев проходят. Матрица описывает то же, что вы сказали бы словами.'
+      : 'Расхождений: ' + wrong + '. Каждое — это либо дыра, либо заблокированная работа: и то и другое обнаружится после релиза.');
+});
+
+/* ── Замена утёкшего ключа ───────────────────────────────────────────── */
+
+const ROT_STEPS = [
+  { id: 'new', name: 'выпустить новый ключ рядом со старым' },
+  { id: 'switch', name: 'переключить сервис на новый' },
+  { id: 'check', name: 'убедиться, что платежи идут' },
+  { id: 'revoke', name: 'отозвать старый ключ' },
+];
+let rotOrder = [];
+
+function paintRotation(){
+  const box = document.getElementById('rot-steps');
+  box.replaceChildren();
+
+  for (const step of ROT_STEPS) {
+    const at = rotOrder.indexOf(step.id);
+    box.append(el('button', {
+      type: 'button', class: at >= 0 ? 'step done' : 'step', 'aria-pressed': at >= 0 ? 'true' : 'false',
+      'data-focus': 'rot:' + step.id,
+      text: (at >= 0 ? (at + 1) + '. ' : '') + step.name,
+      onclick: () => { if (at < 0) rotOrder.push(step.id); paintAll(); },
+    }));
+  }
+
+  const ideal = ['new', 'switch', 'check', 'revoke'];
+  const out = document.getElementById('rot-out');
+  const note = document.getElementById('rot-note');
+
+  if (rotOrder.length === 0) {
+    out.textContent = 'нажимайте шаги в том порядке, в каком стали бы делать';
+    note.className = 'note';
+    note.innerHTML = '<b>Условие.</b> Ключ утёк сегодня, платежи идут каждую минуту. Остановка приёма платежей — прямые потери.';
+    return;
+  }
+
+  let downtime = 0;
+  let revokedEarly = false;
+  const done = new Set();
+
+  for (const id of rotOrder) {
+    if (id === 'revoke' && !done.has('switch')) { revokedEarly = true; downtime += 14; }
+    if (id === 'switch' && !done.has('new')) downtime += 6;
+    done.add(id);
+  }
+
+  out.textContent =
+    rotOrder.map((id, i) => (i + 1) + '. ' + ROT_STEPS.find((s) => s.id === id).name).join('\n') +
+    '\n\nостановка приёма платежей: ' + downtime + ' мин' +
+    (rotOrder.length < ROT_STEPS.length ? '\nосталось шагов: ' + (ROT_STEPS.length - rotOrder.length) : '');
+
+  if (rotOrder.length < ROT_STEPS.length) {
+    note.className = 'note';
+    note.innerHTML = '<b>Продолжайте.</b> Порядок важнее скорости.';
+  } else if (rotOrder.join() === ideal.join()) {
+    note.className = 'note ok';
+    note.innerHTML = '<b>Так и делают.</b> Новый ключ выпускается рядом со старым, сервис переключается, работа проверяется — и только потом старый отзывается. Это возможно, только если ключ читается из хранилища секретов: зашитый в код требует релиза, а релиз в пятницу вечером — это и есть те самые минуты простоя.';
+  } else if (revokedEarly) {
+    note.className = 'note bad';
+    note.innerHTML = '<b>Старый ключ отозван раньше времени.</b> Платежи встали на ' + downtime + ' минут: сервис ходит со старым ключом, а он уже не работает. Отзыв — всегда последний шаг.';
+  } else {
+    note.className = 'note warn';
+    note.innerHTML = '<b>Порядок сбит.</b> Простой ' + downtime + ' минут. Правильная последовательность: выпустить → переключить → проверить → отозвать.';
+  }
+}
+
+document.getElementById('rot-reset').addEventListener('click', () => { rotOrder = []; paintAll(); });
+
+/* ── Конструктор записи аудита ───────────────────────────────────────── */
+
+const AUDIT_FIELDS = [
+  { id: 'who', name: 'кто: id сотрудника', need: true, leak: false, value: '"actor": "u-3391", "role": "registrar"' },
+  { id: 'when', name: 'когда: время', need: true, leak: false, value: '"at": "2026-09-13T10:14:22+03:00"' },
+  { id: 'what', name: 'что: id карты', need: true, leak: false, value: '"card": "c-10483"' },
+  { id: 'where', name: 'откуда: адрес', need: false, leak: false, value: '"ip": "10.2.4.15", "device": "desktop"' },
+  { id: 'context', name: 'контекст: был ли приём', need: false, leak: false, value: '"had_appointment": false' },
+  { id: 'content', name: 'содержимое карты', need: false, leak: true, value: '"snapshot": { "diagnosis": "...", "tests": [...] }' },
+  { id: 'patient', name: 'ФИО и телефон пациента', need: false, leak: true, value: '"patient_name": "Иванова А.", "phone": "+7…"' },
+];
+const auditOn = new Set(['who', 'when', 'what']);
+
+function paintAudit(){
+  const chips = document.getElementById('audit-chips');
+  chips.replaceChildren();
+
+  for (const field of AUDIT_FIELDS) {
+    const on = auditOn.has(field.id);
+    chips.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false',
+      'data-focus': 'audit:' + field.id,
+      onclick: () => { on ? auditOn.delete(field.id) : auditOn.add(field.id); paintAll(); },
+    }, [el('span', { text: field.name })]));
+  }
+
+  const lines = AUDIT_FIELDS.filter((f) => auditOn.has(f.id)).map((f) => '  ' + f.value);
+  document.getElementById('audit-out').textContent = '{\n' + lines.join(',\n') + '\n}';
+
+  const missing = AUDIT_FIELDS.filter((f) => f.need && !auditOn.has(f.id));
+  const leaking = AUDIT_FIELDS.filter((f) => f.leak && auditOn.has(f.id));
+  const canInvestigate = missing.length === 0;
+
+  document.getElementById('audit-kv').innerHTML =
+    '<span class="k">расследование</span><span class="v">' + (canInvestigate ? 'возможно' : 'невозможно: нет ' + missing.map((f) => f.name).join(', ')) + '</span>' +
+    '<span class="k">журнал как утечка</span><span class="v">' + (leaking.length === 0 ? 'нет' : 'да: ' + leaking.map((f) => f.name).join(', ')) + '</span>';
+
+  const note = document.getElementById('audit-note');
+  if (!canInvestigate) {
+    note.className = 'note bad';
+    note.innerHTML = '<b>По такой записи разобрать инцидент нельзя.</b> Минимум — кто, когда и с чем: без любого из трёх запись превращается в шум.';
+  } else if (leaking.length > 0) {
+    note.className = 'note bad';
+    note.innerHTML = '<b>Журнал сам стал медицинской тайной.</b> Содержимое живёт годами и доступно тем, кто разбирает инциденты, — то есть более широкому кругу, чем сама карта. Идентификатор карты позволяет поднять содержимое отдельно и только тем, кому положено.';
+  } else if (auditOn.has('context')) {
+    note.className = 'note ok';
+    note.innerHTML = '<b>Хороший состав.</b> Контекст — самая полезная и самая редкая часть: «был ли у сотрудника приём с этим пациентом» превращает журнал из списка событий в инструмент поиска нетипичного.';
+  } else {
+    note.className = 'note';
+    note.innerHTML = '<b>Достаточно для разбора.</b> Добавьте контекст — признак того, что у сотрудника был законный повод, — и журнал начнёт сам показывать подозрительные просмотры.';
+  }
+}
+
+/* ── Общая отрисовка ─────────────────────────────────────────────────── */
+
+function paintAll(){
+  const keep = focusKey();
+
+  const done = TASKS.filter((t) => progressOf(t.id).done).length;
+  document.getElementById('score').textContent = 'решено ' + done + ' из ' + TASKS.length;
+  document.getElementById('bar').style.width = (done / TASKS.length) * 100 + '%';
+
+  paintTabs();
+  for (const task of TASKS) paintTask(task);
+  paintAnon();
+  paintConsent();
+  paintRetention();
+  paintForm();
+  paintMeasures();
+  paintIdor();
+  paintRotation();
+  paintAudit();
 
   restoreFocus(keep);
 }
 
-render();
+show(active);
+paintAll();
 bridge.send({ kind: 'ready' });
 </script>
 </body>
