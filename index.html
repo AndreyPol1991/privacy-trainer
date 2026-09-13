@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Персональные данные и доступы — тренажёр аналитика</title>
+<meta name="description" content="Сервис записи к врачу разбирается по частям: какие данные персональные, на каком основании их собирают, кто что видит, где лежат секреты и что писать в аудит." />
+<style>
+  /*
+    Один файл без сборки — как у остальных тренажёров. Всё, что нужно для
+    работы, лежит здесь: разметка, стили, задания и мост к платформе.
+  */
+  :root {
+    color-scheme: dark;
+    --bg: #0b1120;
+    --surface: #131c2f;
+    --surface-2: #1b263f;
+    --line: #2a3a5a;
+    --text: #e8eefc;
+    --muted: #9fb0d0;
+    --accent: #22d3ee;
+    --accent-ink: #062c34;
+    --ok: #34d399;
+    --bad: #fb7185;
+    --warn: #fbbf24;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
+  }
+
+  /* Фокус виден всегда: тренажёр проходится с клавиатуры целиком. */
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 64px; }
+
+  header.top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  header.top h1 { font-size: 17px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+  .spacer { flex: 1 1 auto; }
+
+  .badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .badge--live { border-color: var(--accent); color: var(--accent); }
+
+  .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+
+  main { display: grid; grid-template-columns: 260px 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+  nav.list {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px;
+    align-self: start;
+  }
+  nav.list h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 8px 8px 6px; }
+  nav.list button {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    color: var(--text);
+    padding: 8px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: 40px;
+  }
+  nav.list button:hover { background: var(--surface-2); }
+  nav.list button[aria-current='true'] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+  nav.list .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line); flex: 0 0 auto; }
+  nav.list .dot.done { background: var(--ok); border-color: var(--ok); }
+
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h2.title { font-size: 20px; margin: 6px 0 10px; }
+  .story { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  .prompt { margin: 0 0 14px; }
+
+  ul.opts { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
+  ul.opts button {
+    width: 100%;
+    text-align: left;
+    background: var(--surface-2);
+    border: 1.5px solid var(--line);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font: inherit;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  ul.opts button[aria-pressed='true'] { border-color: var(--accent); background: #16324a; }
+  ul.opts button.right { border-color: var(--ok); }
+  ul.opts button.wrong { border-color: var(--bad); }
+  ul.opts .mark { float: right; margin-left: 12px; font-weight: 700; }
+
+  table.grid { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px; }
+  table.grid th, table.grid td { border: 1px solid var(--line); padding: 8px; text-align: left; }
+  table.grid th { color: var(--muted); font-weight: 600; }
+  table.grid td { text-align: center; }
+  table.grid button {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1.5px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+  }
+  table.grid button[aria-pressed='true'] { border-color: var(--accent); background: #16324a; }
+  table.grid button.right { border-color: var(--ok); }
+  table.grid button.wrong { border-color: var(--bad); }
+
+  .match { display: grid; gap: 8px; margin-bottom: 16px; }
+  .match .pair { display: grid; grid-template-columns: 1fr 220px; gap: 8px; align-items: center; }
+  @media (max-width: 640px) { .match .pair { grid-template-columns: 1fr; } }
+  .match .left { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+  .match select {
+    width: 100%;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    font: inherit;
+    min-height: 44px;
+  }
+  .match select.right { border-color: var(--ok); }
+  .match select.wrong { border-color: var(--bad); }
+
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  button.btn {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 18px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  button.btn[disabled] { opacity: .5; cursor: not-allowed; }
+  button.ghost { background: none; color: var(--text); border: 1.5px solid var(--line); }
+
+  .note { border-radius: 12px; padding: 12px 14px; font-size: 14px; margin: 14px 0 0; border: 1px solid var(--line); }
+  .note--ok { border-color: var(--ok); background: #0e2a22; }
+  .note--bad { border-color: var(--bad); background: #2c1420; }
+  .note--hint { border-color: var(--warn); background: #2a2212; }
+
+  .meta { color: var(--muted); font-size: 13px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Персональные данные и доступы</h1>
+      <p class="sub">Сервис записи к врачу «Тонус» — разбираем по частям</p>
+    </div>
+    <div class="spacer"></div>
+    <span class="badge" id="score">решено 0 из 13</span>
+    <span class="badge" id="link" hidden>задания идут в профиль навыков</span>
+  </header>
+
+  <div class="bar"><i id="progress"></i></div>
+
+  <main>
+    <nav class="list" aria-label="Задания">
+      <h2>Задания</h2>
+      <div id="menu"></div>
+    </nav>
+
+    <section class="card" id="task" aria-live="polite"></section>
+  </main>
+
+  <footer>
+    <p>
+      Сценарий вымышленный, персонажи тоже. Правовые формулировки упрощены до сути:
+      тренажёр учит задавать правильные вопросы, а не заменяет юриста.
+    </p>
+  </footer>
+</div>
+
+<script>
+/*
+  Мост к платформе.
+
+  Тренажёр живёт на своём домене и общается с платформой сообщениями. Наружу
+  уходит только факт: «решено задание X, с такой-то попытки, с таким-то числом
+  подсказок». Что это задание подтверждает в графе навыков, решает платформа —
+  иначе привязка к модели оценки жила бы в чужом репозитории.
+
+  Первое сообщение уходит всем («*»): адрес платформы тренажёру неизвестен, он
+  меняется от стенда к стенду. Дальше запоминается источник ответа, и всё
+  остальное шлётся уже точно ему. В сообщениях нет ничего, кроме кодов заданий.
+
+  Без платформы всё работает ровно так же — просто некому отчитываться.
+*/
+const PROTOCOL = 'trainer/1';
+const TRAINER = 'privacy';
+
+const bridge = {
+  embedded: window.parent !== window,
+  target: '*',
+  connected: false,
+  send(message) {
+    if (!this.embedded) return;
+    window.parent.postMessage({ protocol: PROTOCOL, trainer: TRAINER, ...message }, this.target);
+  },
+  solved(task, attempts, hints) {
+    this.send({ kind: 'solved', task, attempts, hints });
+  },
+};
+
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (typeof data !== 'object' || data === null || data.protocol !== PROTOCOL) return;
+
+  if (data.kind === 'hello') {
+    bridge.target = event.origin;
+    bridge.connected = true;
+    document.getElementById('link').hidden = false;
+
+    // Платформа помнит зачтённое дольше, чем хранилище этого домена: оно
+    // живёт на чужом сайте и очищается вместе с ним.
+    for (const id of Array.isArray(data.solved) ? data.solved : []) {
+      const state = progressOf(id);
+      state.done = true;
+      save();
+    }
+    render();
+  }
+
+  if (data.kind === 'accepted') {
+    const state = progressOf(data.task);
+    state.accepted = true;
+    save();
+    render();
+  }
+});
+
+/* ── Задания ──────────────────────────────────────────────────────────── */
+
+const TASKS = [
+  {
+    id: 'pd-kinds',
+    group: 'Персональные данные',
+    title: 'Что здесь персональные данные',
+    story:
+      'В «Тонусе» заводят витрину для аналитиков. Архитектор говорит: «Выгрузим всё, что не ФИО, — это же не персональные данные».',
+    prompt: 'Отметьте всё, что остаётся персональными данными.',
+    kind: 'multi',
+    options: [
+      { text: 'Фамилия, имя и телефон пациента', right: true },
+      { text: 'Номер полиса ОМС', right: true },
+      { text: 'Диагноз в карте, привязанный к номеру карты', right: true },
+      { text: 'Хеш телефона, по которому в системе находится тот же человек', right: true },
+      { text: 'Средняя длительность приёма по клинике за месяц', right: false },
+      { text: 'Версия мобильного приложения', right: false },
+      { text: 'Число записей на понедельник', right: false },
+    ],
+    hints: [],
+    explain:
+      'Персональные данные — не только имя. Всё, по чему человека можно выделить среди других, включая косвенные признаки: номер полиса, номер карты с диагнозом, устойчивый хеш телефона. Хеш — это псевдонимизация, а не обезличивание: связь с человеком восстанавливается той же таблицей соответствия. Обезличенным считается то, из чего человека уже не достать, — агрегаты по клинике и техническая информация без привязки к аккаунту.',
+  },
+
+  {
+    id: 'pd-basis',
+    group: 'Персональные данные',
+    title: 'На каком основании собираем',
+    story:
+      'Юрист просит расписать, зачем «Тонусу» каждый кусок данных. Основание определяет главное: можно ли отказаться и что будет, если человек передумает.',
+    prompt: 'Сопоставьте сценарий с основанием обработки.',
+    kind: 'match',
+    choices: [
+      'Исполнение договора с пациентом',
+      'Требование закона',
+      'Отдельное согласие, которое можно отозвать',
+    ],
+    pairs: [
+      { left: 'Имя и телефон, чтобы записать к врачу и напомнить о приёме', right: 'Исполнение договора с пациентом' },
+      { left: 'Передача сведений об оказанной услуге в страховую по ОМС', right: 'Требование закона' },
+      { left: 'Рассылка с акциями стоматологии раз в месяц', right: 'Отдельное согласие, которое можно отозвать' },
+      { left: 'Запись разговора с оператором «для обучения сотрудников»', right: 'Отдельное согласие, которое можно отозвать' },
+      { left: 'Хранение сведений о приёме в медицинской карте', right: 'Требование закона' },
+    ],
+    hints: [
+      'Спросите про каждый пункт: что случится, если человек скажет «нет»? Запись к врачу без телефона невозможна, а рассылка — вполне.',
+      'Если данные нужны, чтобы выполнить то, за чем человек пришёл, — это договор. Если система обязана их хранить независимо от желания сторон — закон. Всё остальное — согласие, и его придётся уметь отзывать.',
+    ],
+    explain:
+      'Практическое следствие для постановки: у каждого основания своё поведение системы. Договор — данные нужны для услуги и удаляются, когда отпадает необходимость. Закон — срок и состав заданы снаружи, отозвать нельзя. Согласие — обязана существовать кнопка «отозвать», после которой обработка прекращается, а рассылка останавливается. Требование «собираем телефон» без основания непроверяемо: непонятно, что делать с отзывом.',
+  },
+
+  {
+    id: 'pd-retention',
+    group: 'Персональные данные',
+    title: 'Сколько хранить и что потом',
+    story:
+      'В требованиях к витрине написано: «Хранить данные о приёмах». Сроков нет. Через три года выгрузка весит терабайт, а в ней — карты людей, которые были в клинике однажды.',
+    prompt: 'Какая формулировка годится в требование?',
+    kind: 'single',
+    options: [
+      {
+        text: 'Сведения о приёме хранятся срок, установленный для медицинской документации; по истечении карта обезличивается, в витрине остаются агрегаты без идентификаторов. Резервные копии живут 30 дней и стираются по расписанию.',
+        right: true,
+      },
+      { text: 'Данные хранятся бессрочно: медицинская история может понадобиться в любой момент.', right: false },
+      { text: 'Данные удаляются через год после последнего приёма, включая всю медицинскую документацию.', right: false },
+      { text: 'Срок хранения определяет администратор клиники в настройках.', right: false },
+    ],
+    hints: [
+      'Проверьте формулировку тремя вопросами: назван ли срок, сказано ли, что происходит после него, и учтены ли резервные копии.',
+    ],
+    explain:
+      'Срок хранения — это не «сколько не жалко места», а часть требования: его задаёт назначение и закон. Плохи обе крайности: «вечно» превращает базу в бессрочную ответственность, «через год удалим всё» нарушает правила ведения медицинской документации. И самое забываемое — резервные копии: данные, «удалённые» из базы, живут в них ещё месяцами, поэтому срок жизни копий пишется рядом.',
+  },
+
+  {
+    id: 'pd-minimize',
+    group: 'Персональные данные',
+    title: 'Сократить состав до необходимого',
+    story:
+      'Форма записи к врачу собирает двенадцать полей. Маркетинг просил место работы, поддержка — второй телефон, разработка добавила адрес «на будущее». Конверсия формы 41%.',
+    prompt: 'Отметьте поля, которые для записи на приём собирать не нужно.',
+    kind: 'multi',
+    options: [
+      { text: 'Адрес регистрации', right: true },
+      { text: 'Серия и номер паспорта', right: true },
+      { text: 'Место работы', right: true },
+      { text: 'Семейное положение', right: true },
+      { text: 'Телефон родственника', right: true },
+      { text: 'Фамилия и имя', right: false },
+      { text: 'Телефон для связи', right: false },
+      { text: 'Дата рождения', right: false },
+      { text: 'Номер полиса — для приёма по ОМС', right: false },
+    ],
+    hints: [
+      'Вопрос к каждому полю один: что сломается в записи на приём, если его не будет?',
+      'Паспорт и полис нужны в регистратуре при оказании услуги — но это другой момент и другое основание. Собирать их в форме записи «чтобы потом не спрашивать» значит хранить лишнее месяцами.',
+    ],
+    explain:
+      'Сокращение состава — самая дешёвая мера защиты: данных, которых нет, нельзя лишиться. Каждое лишнее поле стоит дважды — конверсией формы и ответственностью за хранение. Рабочий приём в постановке: рядом с каждым полем писать, для чего оно нужно и на каком основании собирается. Половина полей отпадает на этом упражнении, вторая половина переезжает в момент, когда действительно нужна.',
+  },
+
+  {
+    id: 'threat-actor',
+    group: 'Модель угроз',
+    title: 'Кто здесь нарушитель',
+    story:
+      'В клинику приходит известный человек. На следующий день в сети появляется его диагноз. Внешнего взлома не было: все входы штатные, пароли не менялись, журналы сервера чистые.',
+    prompt: 'Кто нарушитель в этом сценарии?',
+    kind: 'single',
+    options: [
+      {
+        text: 'Сотрудник с законным доступом, которому этот доступ не был нужен для работы',
+        right: true,
+      },
+      { text: 'Внешний злоумышленник, подобравший пароль', right: false },
+      { text: 'Подрядчик, обслуживающий сервер', right: false },
+      { text: 'Ошибка в коде, открывшая карты наружу', right: false },
+    ],
+    hints: [],
+    explain:
+      'Самая частая утечка медицинских данных — не взлом, а любопытство своих. Меры против внешнего нарушителя здесь не помогают вовсе: у человека настоящий логин и настоящее право открывать карты. Помогают другие: доступ по признаку объекта, а не «все карты всем регистраторам», журнал просмотров с разбором нетипичного, ограничение массовой выгрузки. Модель угроз начинается с вопроса «кто», потому что от ответа зависит, какие меры имеют смысл.',
+  },
+
+  {
+    id: 'threat-measure',
+    group: 'Модель угроз',
+    title: 'Мера против угрозы',
+    story:
+      'Безопасность прислала список мер: «шифрование дисков, двухфакторная аутентификация, ссылки с ограниченным сроком, журнал доступа, проверка на сервере». Руководитель спрашивает: «От чего это спасает?»',
+    prompt: 'Сопоставьте меру с угрозой, ради которой она вводится.',
+    kind: 'match',
+    choices: [
+      'Сервер или диск физически вынесли',
+      'Свой сотрудник смотрит чужие карты',
+      'Пароль подобран или утёк',
+      'Ссылку на снимок переслали наружу',
+      'Запрос из браузера подменили',
+    ],
+    pairs: [
+      { left: 'Шифрование дисков сервера', right: 'Сервер или диск физически вынесли' },
+      { left: 'Журнал просмотров карт и разбор нетипичного', right: 'Свой сотрудник смотрит чужие карты' },
+      { left: 'Второй фактор при входе', right: 'Пароль подобран или утёк' },
+      { left: 'Ссылка на снимок живёт 15 минут', right: 'Ссылку на снимок переслали наружу' },
+      { left: 'Проверка прав на сервере, а не только в интерфейсе', right: 'Запрос из браузера подменили' },
+    ],
+    hints: [
+      'Идите от меры к вопросу «что должно случиться, чтобы она пригодилась».',
+      'Шифрование диска не мешает сотруднику смотреть карты: он входит в систему законно, и всё расшифровано. И наоборот — журнал просмотров бесполезен, если диск вынесли.',
+    ],
+    explain:
+      'Список мер без угроз — это покупка замков без понимания, какие двери есть в доме. Отсюда два практических правила. Первое: у каждой меры в требованиях названа угроза, от которой она спасает; мера без угрозы — расход без результата. Второе, обратное: у каждой названной угрозы есть мера, иначе её назвали зря. Обе проверки делаются за час на встрече и находят и лишнее, и пропущенное.',
+  },
+
+  {
+    id: 'access-role-or-attribute',
+    group: 'Доступы',
+    title: 'Роль или признак объекта',
+    story:
+      'Разработчик спрашивает: «Хватит ли ролей? Или нужны правила посложнее?» Ответ зависит от формулировок, которые вы напишете.',
+    prompt: 'Отметьте правила, где одной роли недостаточно.',
+    kind: 'multi',
+    options: [
+      { text: 'Врач видит карты только тех пациентов, которые к нему записаны', right: true },
+      { text: 'Администратор управляет расписанием только своей клиники', right: true },
+      { text: 'Пациент видит только свои записи и результаты', right: true },
+      { text: 'Любой врач может открыть справочник препаратов', right: false },
+      { text: 'Регистратор может создавать записи на приём', right: false },
+    ],
+    hints: [],
+    explain:
+      'Роль отвечает на вопрос «что человек может делать вообще», признак объекта — «с какими именно записями». Как только в требовании появляются слова «свой», «своей клиники», «к нему записаны», ролей перестаёт хватать: правило зависит от связи между человеком и конкретной записью. Это не тонкость реализации, а разница в постановке: «регистратор видит карты» и «регистратор видит карты пациентов своей клиники» — два разных продукта, и второй заметно дороже.',
+  },
+
+  {
+    id: 'access-matrix',
+    group: 'Доступы',
+    title: 'Матрица доступа',
+    story:
+      'Перед разработкой раздела «Карта пациента» надо утвердить, кто что может. На словах все согласны; на матрице выясняется, что нет.',
+    prompt: 'Отметьте разрешённые действия для каждой роли.',
+    kind: 'grid',
+    rows: ['Пациент', 'Врач', 'Регистратор', 'Администратор клиники'],
+    cols: [
+      'Смотреть свою карту',
+      'Смотреть карту пациента своей клиники',
+      'Отменить чужую запись',
+      'Выгрузить список пациентов',
+    ],
+    right: [
+      [true, false, false, false],
+      [false, true, true, false],
+      [false, false, true, false],
+      [false, false, true, true],
+    ],
+    hints: [
+      'Врач работает с картой, регистратор — с расписанием. Возможность выгрузить список — отдельное право, а не следствие того, что человек и так видит эти записи по одному.',
+      'Администратор клиники управляет работой клиники, но не лечит: доступ к медицинской части карты ему не нужен. А массовая выгрузка — именно его инструмент, и именно поэтому она отдельно журналируется.',
+    ],
+    explain:
+      'Матрица — самый дешёвый способ поссорить всех заранее, а не после релиза. Две ошибки, которые она всегда вскрывает. Первая: «видит по одному» незаметно превращается в «может выгрузить всех» — а это разные угрозы, одна из них утечка целой базы. Вторая: административные роли по привычке получают всё, включая медицинскую часть, хотя работа у них другая. Пустая клетка в матрице — тоже решение, и его стоит проговорить вслух.',
+  },
+
+  {
+    id: 'access-own-records',
+    group: 'Доступы',
+    title: 'Свои и чужие записи',
+    story:
+      'В личном кабинете пациент открывает результаты анализов. Адрес страницы выглядит так: /results?patient=10482. Тестировщик меняет число на 10483 и видит чужие анализы.',
+    prompt: 'Какое требование закрывает эту дыру?',
+    kind: 'single',
+    options: [
+      {
+        text: 'Сервер определяет пациента по сессии, а идентификатор из адреса используется только для проверки: не совпал — 404, и это записывается в журнал',
+        right: true,
+      },
+      { text: 'Убрать идентификатор из адреса и передавать его в теле запроса', right: false },
+      { text: 'Скрыть чужие результаты в интерфейсе и не показывать ссылку на них', right: false },
+      { text: 'Зашифровать идентификатор, чтобы его нельзя было подобрать', right: false },
+    ],
+    hints: [
+      'Всё, что приходит из браузера, человек может изменить — включая тело запроса и «зашифрованный» идентификатор. Вопрос в том, откуда сервер узнаёт, кто перед ним.',
+    ],
+    explain:
+      'Это самая распространённая уязвимость веб-систем: доступ к чужому объекту по подставленному идентификатору. Лечится не прятками, а источником истины: кто перед нами, сервер знает из сессии, а не из параметра. Остальные варианты усложняют подбор, но не запрещают доступ. Две детали, которые стоит написать прямо в требовании: отвечать «не найдено», а не «нет прав» — иначе по ответу можно перебирать существующие карты, — и записывать такие попытки, потому что это готовый сигнал о переборе.',
+  },
+
+  {
+    id: 'secret-or-setting',
+    group: 'Секреты',
+    title: 'Секрет или настройка',
+    story:
+      'В конфигурации сервиса записи двадцать значений. Часть из них можно спокойно показать на экране при демонстрации, часть — нельзя ни при каких условиях.',
+    prompt: 'Отметьте то, что является секретом.',
+    kind: 'multi',
+    options: [
+      { text: 'Ключ доступа к платёжному шлюзу', right: true },
+      { text: 'Пароль пользователя базы данных', right: true },
+      { text: 'Закрытый ключ, которым подписываются токены входа', right: true },
+      { text: 'Токен бота, отправляющего напоминания о приёме', right: true },
+      { text: 'Адрес сервиса отправки СМС', right: false },
+      { text: 'Срок жизни токена входа — 30 минут', right: false },
+      { text: 'Часовой пояс клиники', right: false },
+    ],
+    hints: [],
+    explain:
+      'Граница простая: секрет — то, чем можно воспользоваться от имени системы. Адрес сервиса и срок жизни токена этим свойством не обладают: зная их, ничего не сделаешь. Практическое следствие — у секрета другой жизненный цикл: он не лежит в репозитории, не печатается в журнал, не пересылается в переписке и может быть заменён без выкладки новой версии. Если заменить его можно только релизом, то при утечке система будет беззащитна ровно столько, сколько идёт релиз.',
+  },
+
+  {
+    id: 'secret-hunt',
+    group: 'Секреты',
+    title: 'Найти секрет там, где его быть не должно',
+    story:
+      'Разбор инцидента: токен платёжного шлюза оказался у постороннего. Ищем, где он мог засветиться. Ниже — пять мест, которые смотрели.',
+    prompt: 'Отметьте места, где секрет действительно утёк.',
+    kind: 'multi',
+    options: [
+      { text: 'В описании задачи в трекере: «повторить запрос с ключом sk_live_9f2c…»', right: true },
+      { text: 'В журнале сервиса печатается заголовок Authorization целиком', right: true },
+      { text: 'Файл .env с ключами закоммичен в репозиторий два года назад и потом удалён', right: true },
+      { text: 'В переписке с подрядчиком прислан скриншот настроек с видимым ключом', right: true },
+      { text: 'В журнале записан идентификатор платежа pay_7712', right: false },
+    ],
+    hints: [
+      'Удалённый из репозитория файл остаётся в истории: его достаёт любой, у кого есть копия. Скриншот — такой же носитель, как текст.',
+    ],
+    explain:
+      'Секрет утекает не через взлом, а через обычную работу: задача в трекере, журнал, переписка, скриншот, история репозитория. Отсюда два требования, которые пишет аналитик. Первое: заголовки авторизации и тела запросов с ключами в журнал не попадают — маскируются на уровне записи, а не «мы стараемся не логировать». Второе: у секрета есть план замены — утёкший меняется без остановки системы, а значит, читается из хранилища секретов, а не из кода. Вопрос «как мы поменяем этот ключ в пятницу вечером» стоит задать до того, как это понадобится.',
+  },
+
+  {
+    id: 'audit-or-log',
+    group: 'Аудит',
+    title: 'Аудит или журнал системы',
+    story:
+      'Заказчик просит «включить логирование». Разработка включает — и получает журнал, по которому невозможно ответить на вопрос «кто смотрел эту карту».',
+    prompt: 'Отметьте события, которым место в журнале действий людей.',
+    kind: 'multi',
+    options: [
+      { text: 'Регистратор открыл карту пациента', right: true },
+      { text: 'Администратор выгрузил список пациентов клиники', right: true },
+      { text: 'Врач изменил запись в карте', right: true },
+      { text: 'Сотрудник изменил права другому сотруднику', right: true },
+      { text: 'Сервис уведомлений перезапущен', right: false },
+      { text: 'Запрос к базе выполнялся 2,4 секунды', right: false },
+      { text: 'Очередь писем выросла до 300 сообщений', right: false },
+    ],
+    hints: [],
+    explain:
+      'Это два разных журнала с разными читателями и разными сроками. Журнал системы нужен дежурному, живёт дни-недели и отвечает на вопрос «что с системой». Аудит нужен при разборе спорной ситуации, живёт годами и отвечает на вопрос «кто и что сделал с чужими данными». Их часто смешивают в одном потоке, и тогда при расследовании оказывается, что нужные события уже вытеснены техническим шумом.',
+  },
+
+  {
+    id: 'audit-scope',
+    group: 'Аудит',
+    title: 'Что писать в аудит',
+    story:
+      'Пишете требование к журналу просмотров карт. Соблазн понятен: записывать побольше — вдруг пригодится. Но журнал аудита сам становится хранилищем персональных данных.',
+    prompt: 'Отметьте то, что должно попасть в запись о просмотре карты.',
+    kind: 'multi',
+    options: [
+      { text: 'Кто открыл: идентификатор сотрудника и его роль на момент действия', right: true },
+      { text: 'Когда: точное время с часовым поясом', right: true },
+      { text: 'Что открыл: идентификатор карты', right: true },
+      { text: 'Откуда: адрес и признак устройства', right: true },
+      { text: 'Контекст: был ли у сотрудника приём с этим пациентом в этот день', right: true },
+      { text: 'Содержимое карты на момент просмотра', right: false },
+      { text: 'Диагноз и результаты анализов пациента', right: false },
+      { text: 'Фамилия и телефон пациента', right: false },
+    ],
+    hints: [
+      'Разделите вопросы: что нужно, чтобы восстановить картину при разборе, и что из этого само является медицинской тайной.',
+      'Идентификатор карты позволяет поднять содержимое отдельно и только тем, кому это положено. Скопированное в журнал содержимое живёт годами и доступно тем, кто разбирает инциденты.',
+    ],
+    explain:
+      'Состав аудита определяется вопросом «что понадобится при разборе»: кто, когда, с чем, откуда и был ли законный повод. Содержимое в журнал не копируется — иначе аудит превращается во вторую, менее защищённую копию медицинских карт, и утечка журнала становится утечкой диагнозов. Ещё две детали, которые стоит написать: роль фиксируется на момент действия, иначе смена должности перепишет прошлое, и сама запись неизменяема — журнал, который можно поправить, не является доказательством ни в одном разборе.',
+  },
+];
+
+/* ── Состояние ───────────────────────────────────────────────────────── */
+
+const STORAGE = 'privacy-trainer.v1';
+let state = load();
+let current = TASKS.findIndex((task) => !progressOf(task.id).done);
+if (current < 0) current = 0;
+let picked = new Set();
+let grid = new Set();
+let matched = {};
+let checked = null;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE);
+    return raw === null ? {} : JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE, JSON.stringify(state));
+  } catch {
+    /* приватный режим — просто не сохраняем */
+  }
+}
+
+function progressOf(id) {
+  if (state[id] === undefined) state[id] = { attempts: 0, hints: 0, done: false, accepted: false };
+  return state[id];
+}
+
+/* ── Проверка ответа ─────────────────────────────────────────────────── */
+
+function isRight(task) {
+  if (task.kind === 'single' || task.kind === 'multi') {
+    const right = new Set(task.options.map((o, i) => (o.right ? i : -1)).filter((i) => i >= 0));
+    if (picked.size !== right.size) return false;
+    for (const index of picked) if (!right.has(index)) return false;
+    return true;
+  }
+
+  if (task.kind === 'match') {
+    return task.pairs.every((pair, index) => matched[index] === pair.right);
+  }
+
+  if (task.kind === 'grid') {
+    for (let row = 0; row < task.rows.length; row += 1) {
+      for (let col = 0; col < task.cols.length; col += 1) {
+        const should = task.right[row][col];
+        const has = grid.has(`${row}:${col}`);
+        if (should !== has) return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}
+
+function check() {
+  const task = TASKS[current];
+  const progress = progressOf(task.id);
+  const ok = isRight(task);
+
+  progress.attempts += 1;
+  checked = ok ? 'ok' : 'bad';
+
+  if (ok && !progress.done) {
+    progress.done = true;
+    // Попытки и подсказки уходят как есть: платформа сама решит, насколько
+    // это снижает вес доказательства.
+    bridge.solved(task.id, Math.min(progress.attempts, 99), progress.hints);
+  }
+
+  save();
+  render();
+}
+
+function openHint() {
+  const task = TASKS[current];
+  const progress = progressOf(task.id);
+  if (progress.hints >= task.hints.length) return;
+  progress.hints += 1;
+  save();
+  render();
+}
+
+function go(index) {
+  current = index;
+  picked = new Set();
+  grid = new Set();
+  matched = {};
+  checked = null;
+  render();
+}
+
+/* ── Отрисовка ───────────────────────────────────────────────────────── */
+
+function element(tag, props = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (key === 'class') node.className = value;
+    else if (key === 'text') node.textContent = value;
+    else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+    else if (value !== null && value !== false) node.setAttribute(key, value === true ? '' : value);
+  }
+  for (const child of children) node.append(child);
+  return node;
+}
+
+/*
+  Отрисовка перебирает разметку целиком, и после каждого нажатия фокус уезжал
+  в начало документа: человеку с клавиатуры приходилось добираться до списка
+  заново после каждой отметки. Поэтому у каждого элемента управления есть ключ,
+  по которому фокус возвращается на место.
+*/
+function focusKey() {
+  const active = document.activeElement;
+  return active === null ? null : active.getAttribute('data-focus');
+}
+
+function restoreFocus(key) {
+  if (key === null) return;
+  const back = document.querySelector(`[data-focus="${key}"]`);
+  if (back !== null) back.focus();
+}
+
+function renderMenu() {
+  const menu = document.getElementById('menu');
+  menu.replaceChildren();
+
+  let group = null;
+  TASKS.forEach((task, index) => {
+    if (task.group !== group) {
+      group = task.group;
+      menu.append(element('h2', { text: group }));
+    }
+
+    const done = progressOf(task.id).done;
+    menu.append(
+      element(
+        'button',
+        {
+          type: 'button',
+          'data-focus': `menu:${index}`,
+          'aria-current': index === current ? 'true' : 'false',
+          onclick: () => go(index),
+        },
+        [
+          element('span', { class: done ? 'dot done' : 'dot', 'aria-hidden': true }),
+          element('span', { text: task.title }),
+        ],
+      ),
+    );
+  });
+}
+
+function renderOptions(task) {
+  const list = element('ul', { class: 'opts' });
+
+  task.options.forEach((option, index) => {
+    const selected = picked.has(index);
+    let extra = '';
+    let mark = '';
+
+    if (checked !== null) {
+      if (option.right) {
+        extra = ' right';
+        mark = selected ? '✓' : '· верно';
+      } else if (selected) {
+        extra = ' wrong';
+        mark = '✕';
+      }
+    }
+
+    const button = element('button', {
+      type: 'button',
+      class: `opt${extra}`,
+      'data-focus': `opt:${index}`,
+      'aria-pressed': selected ? 'true' : 'false',
+      onclick: () => {
+        if (task.kind === 'single') picked = selected ? new Set() : new Set([index]);
+        else if (selected) picked.delete(index);
+        else picked.add(index);
+        checked = null;
+        render();
+      },
+    });
+
+    button.append(element('span', { text: option.text }));
+    if (mark !== '') button.append(element('span', { class: 'mark', text: mark }));
+
+    list.append(element('li', {}, [button]));
+  });
+
+  return list;
+}
+
+function renderMatch(task) {
+  const box = element('div', { class: 'match' });
+
+  task.pairs.forEach((pair, index) => {
+    const select = element('select', {
+      'aria-label': pair.left,
+      'data-focus': `match:${index}`,
+      onchange: (event) => {
+        matched[index] = event.target.value;
+        checked = null;
+        render();
+      },
+    });
+
+    select.append(element('option', { value: '', text: '— выберите —' }));
+    for (const choice of task.choices) {
+      select.append(element('option', { value: choice, text: choice, ...(matched[index] === choice ? { selected: true } : {}) }));
+    }
+
+    if (checked !== null) select.className = matched[index] === pair.right ? 'right' : 'wrong';
+
+    box.append(
+      element('div', { class: 'pair' }, [element('div', { class: 'left', text: pair.left }), select]),
+    );
+  });
+
+  return box;
+}
+
+function renderGrid(task) {
+  const table = element('table', { class: 'grid' });
+  const head = element('tr', {}, [element('th', { text: 'Роль' })]);
+  for (const col of task.cols) head.append(element('th', { text: col }));
+  table.append(head);
+
+  task.rows.forEach((row, rowIndex) => {
+    const tr = element('tr', {}, [element('th', { text: row })]);
+
+    task.cols.forEach((col, colIndex) => {
+      const key = `${rowIndex}:${colIndex}`;
+      const selected = grid.has(key);
+      let extra = '';
+
+      if (checked !== null) {
+        const should = task.right[rowIndex][colIndex];
+        if (should === selected) extra = ' right';
+        else extra = ' wrong';
+      }
+
+      const button = element('button', {
+        type: 'button',
+        class: extra.trim(),
+        'data-focus': `grid:${key}`,
+        'aria-pressed': selected ? 'true' : 'false',
+        'aria-label': `${row}: ${col}`,
+        text: selected ? '✓' : '',
+        onclick: () => {
+          if (selected) grid.delete(key);
+          else grid.add(key);
+          checked = null;
+          render();
+        },
+      });
+
+      tr.append(element('td', {}, [button]));
+    });
+
+    table.append(tr);
+  });
+
+  return table;
+}
+
+function render() {
+  const task = TASKS[current];
+  const progress = progressOf(task.id);
+  const done = TASKS.filter((one) => progressOf(one.id).done).length;
+  const keep = focusKey();
+
+  document.getElementById('score').textContent = `решено ${done} из ${TASKS.length}`;
+  document.getElementById('progress').style.width = `${(done / TASKS.length) * 100}%`;
+
+  renderMenu();
+
+  const card = document.getElementById('task');
+  card.replaceChildren();
+
+  card.append(element('span', { class: 'eyebrow', text: task.group }));
+  card.append(element('h2', { class: 'title', text: task.title }));
+  card.append(element('p', { class: 'story', text: task.story }));
+  card.append(element('p', { class: 'prompt', text: task.prompt }));
+
+  if (task.kind === 'match') card.append(renderMatch(task));
+  else if (task.kind === 'grid') card.append(renderGrid(task));
+  else card.append(renderOptions(task));
+
+  for (let i = 0; i < progress.hints; i += 1) {
+    card.append(element('p', { class: 'note note--hint', text: `Подсказка ${i + 1}. ${task.hints[i]}` }));
+  }
+
+  const actions = element('div', { class: 'row' });
+
+  actions.append(
+    element('button', {
+      type: 'button',
+      class: 'btn',
+      'data-focus': 'act:check',
+      text: progress.done ? 'Проверить снова' : 'Проверить',
+      onclick: check,
+    }),
+  );
+
+  if (progress.hints < task.hints.length) {
+    actions.append(
+      element('button', {
+        type: 'button',
+        class: 'btn ghost',
+        'data-focus': 'act:hint',
+        text: progress.hints === 0 ? 'Подсказка' : 'Ещё подсказка',
+        onclick: openHint,
+      }),
+    );
+  }
+
+  if (current < TASKS.length - 1) {
+    actions.append(
+      element('button', {
+        type: 'button',
+        class: 'btn ghost',
+        'data-focus': 'act:next',
+        text: 'Следующее →',
+        onclick: () => go(current + 1),
+      }),
+    );
+  }
+
+  card.append(actions);
+
+  if (progress.attempts > 0) {
+    const parts = [`попыток: ${progress.attempts}`];
+    if (task.hints.length > 0) parts.push(`подсказок: ${progress.hints} из ${task.hints.length}`);
+    if (progress.accepted) parts.push('зачтено в профиль навыков');
+    card.append(element('p', { class: 'meta', text: parts.join(' · ') }));
+  }
+
+  if (checked === 'ok') {
+    card.append(element('p', { class: 'note note--ok', text: `Верно. ${task.explain}` }));
+  }
+
+  if (checked === 'bad') {
+    card.append(
+      element('p', {
+        class: 'note note--bad',
+        text: 'Пока не сходится. Неверно отмеченное подсвечено, верное — зелёным контуром. Исправьте и проверьте снова.',
+      }),
+    );
+  }
+
+  restoreFocus(keep);
+}
+
+render();
+bridge.send({ kind: 'ready' });
+</script>
+</body>
+</html>
