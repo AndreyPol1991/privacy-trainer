@@ -85,6 +85,10 @@
   .card > p{color:var(--muted); font-size:14px; margin:6px 0 14px; max-width:72ch}
   .card > p:last-child{margin-bottom:0}
   .card--task{border-color:color-mix(in srgb, var(--accent) 40%, var(--line))}
+  /* Объяснение для тех, кто в теме впервые: мягче фон, ничего не требует. */
+  .card--plain{background:var(--surface-2); border-style:dashed}
+  .card--plain p{color:var(--muted); font-size:14px; margin:8px 0 0; max-width:72ch}
+  .card--plain p b{color:var(--ink)}
 
   .two-w{display:grid; grid-template-columns:1fr 1fr; gap:18px}
   /* Колонка грида по умолчанию не уже своего содержимого: длинная строка в
@@ -198,6 +202,15 @@
 <section class="panel" id="data" role="tabpanel" aria-label="Данные">
   <p class="lead">Витрину для аналитиков собирают по принципу «выгрузим всё, что не ФИО». Здесь видно, почему этого мало: человека выделяют <b>не имена, а сочетания</b> — год рождения, город, дата приёма. Дальше по вкладкам: основание обработки, срок хранения, состав формы.</p>
 
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> что вообще значит «персональные данные»</h2>
+    <p>Представьте фотографию класса и подпись: «третий слева во втором ряду». Имени нет, а человек
+    указан однозначно. Персональные данные — это любая такая подпись: не обязательно имя, достаточно
+    описания, по которому человека можно выделить среди остальных.</p>
+    <p>Дальше в разделе — две проверки этого правила: сначала разметить колонки будущей выгрузки, потом
+    посмотреть на симуляторе, сколько людей на самом деле прячется за «обезличенной» строкой.</p>
+  </div>
+
   <div class="card">
     <h2><span class="tag">РАЗМЕТКА</span> что здесь персональные данные</h2>
     <p>Колонки будущей выгрузки. Отметьте те, что остаются персональными данными, — и нажмите «Проверить».</p>
@@ -221,6 +234,19 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2><span class="tag">ОПЫТ</span> «здесь же нет имени» — проверим</h2>
+    <p>Вот строка из «обезличенной» выгрузки. Нажмите «Найти человека» — система поищет, кто ей
+    соответствует, среди пяти тысяч пациентов.</p>
+    <div class="console" id="who-row"></div>
+    <div class="form-row">
+      <button class="act" id="who-run" type="button">Найти человека</button>
+      <button class="act ghost" id="who-next" type="button">Другая строка</button>
+    </div>
+    <div class="console" id="who-out" style="margin-top:12px"></div>
+    <div class="note" id="who-note"></div>
+  </div>
+
   <div class="card next">
     <div><b>Дальше →</b> <span class="sub">основание обработки: почему одни данные можно не отдавать, а другие нельзя не хранить</span></div>
     <button class="act go" data-goto="basis" type="button">Перейти →</button>
@@ -230,6 +256,16 @@
 <!-- ─────────────────────────── ОСНОВАНИЯ ─────────────────────────── -->
 <section class="panel" id="basis" role="tabpanel" aria-label="Основания">
   <p class="lead">Основание обработки — это ответ на вопрос «что будет, если человек скажет нет». У договора, закона и согласия ответы разные, и <b>система обязана вести себя по-разному</b>. Требование «собираем телефон» без основания непроверяемо.</p>
+
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> зачем спрашивать «на каком основании»</h2>
+    <p>Три разных случая из жизни. Вы заказали пиццу — курьеру нужен ваш адрес, отказаться нельзя:
+    это <b>договор</b>. Налоговая требует от пиццерии хранить чеки — их мнение никто не спрашивает:
+    это <b>закон</b>. Пиццерия хочет слать вам скидки — тут вы решаете сами, и в любой момент можете
+    передумать: это <b>согласие</b>.</p>
+    <p>Разница не юридическая, а инженерная: под каждый случай система ведёт себя по-разному. Ниже
+    видно, что именно выключается, когда человек говорит «больше мне не пишите».</p>
+  </div>
 
   <div class="card">
     <h2><span class="tag">СИМУЛЯТОР</span> пациент отзывает согласие</h2>
@@ -253,6 +289,19 @@
   <div class="card card--task">
     <h2><span class="tag">ЗАДАНИЕ</span> основание для каждого сценария</h2>
     <div id="t-pd-basis"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">ПО ШАГАМ</span> три просьбы одного пациента</h2>
+    <p>Один человек, три обращения подряд. Нажимайте «Дальше» и смотрите, что система обязана сделать
+    в каждом случае — и почему ответы разные.</p>
+    <div class="steps" id="three-steps"></div>
+    <div class="console" id="three-out" style="margin-top:12px"></div>
+    <div class="note" id="three-note"></div>
+    <div class="form-row">
+      <button class="act" id="three-next" type="button">Дальше →</button>
+      <button class="act ghost" id="three-reset" type="button">Сначала</button>
+    </div>
   </div>
 
   <div class="card">
@@ -287,6 +336,15 @@
 <section class="panel" id="minimize" role="tabpanel" aria-label="Минимизация">
   <p class="lead">Форма записи собирает двенадцать полей: маркетинг просил место работы, поддержка — второй телефон, разработка добавила адрес «на будущее». <b>Данных, которых нет, нельзя лишиться</b>, а каждое лишнее поле стоит и конверсии, и ответственности за хранение.</p>
 
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> почему лишнее поле — это дорого</h2>
+    <p>Каждое поле в форме вы платите дважды. Первый раз — сейчас: чем длиннее форма, тем больше людей
+    её бросает. Второй раз — потом: всё собранное надо хранить, охранять и отвечать за него, если
+    утечёт.</p>
+    <p>Правило простое: <b>данных, которых нет, нельзя лишиться</b>. Поэтому к каждому полю задают один
+    вопрос: что сломается, если его не спрашивать?</p>
+  </div>
+
   <div class="card">
     <h2><span class="tag">КОНСТРУКТОР</span> соберите форму записи</h2>
     <p>Выключайте поля и смотрите справа: можно ли ещё оказать услугу, сколько данных вы храните и что будет при утечке.</p>
@@ -318,6 +376,16 @@
 <!-- ─────────────────────────── УГРОЗЫ ─────────────────────────── -->
 <section class="panel" id="threat" role="tabpanel" aria-label="Угрозы">
   <p class="lead">В клинику пришёл известный человек, назавтра его диагноз в сети. Взлома не было: входы штатные, журналы сервера чистые. <b>Меры против внешнего нарушителя здесь не спасают вовсе</b> — и это главный урок модели угроз.</p>
+
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> модель угроз — это список «кто и как может навредить»</h2>
+    <p>Вы ставите дверь в квартиру. От соседа-шумного она не спасёт, от воды сверху тоже. Она спасает
+    ровно от одного: от того, кто хочет войти. Замок, поставленный без ответа на вопрос «от кого», —
+    это трата денег и ложное спокойствие.</p>
+    <p>В системах так же. Сначала называют, <b>кто</b> может навредить и <b>как</b>, и только потом
+    выбирают меры. Ниже — случай, где привычные меры не спасают вовсе, и доска, на которой видно,
+    какая мера какую угрозу закрывает.</p>
+  </div>
 
   <div class="card card--task">
     <h2><span class="tag">ЗАДАНИЕ</span> кто нарушитель</h2>
@@ -355,9 +423,38 @@
 <section class="panel" id="access" role="tabpanel" aria-label="Доступы">
   <p class="lead">Как только в требовании появляются слова «свой», «своей клиники», «к нему записаны» — ролей перестаёт хватать: правило зависит от <b>связи между человеком и конкретной записью</b>. Ниже это видно на прогоне сценариев по вашей же матрице.</p>
 
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> роль и признак объекта — это разные вещи</h2>
+    <p>В школе учитель может ставить оценки — это <b>роль</b>. Но ставить он их может только своим
+    ученикам и только по своему предмету — это <b>признак объекта</b>: правило зависит не от
+    должности, а от связи между человеком и конкретной записью.</p>
+    <p>Признак опознаётся по словам «свой», «своей клиники», «к нему записаны». Как только они
+    появились в требовании, одних ролей мало — и это заметно дороже в разработке, поэтому говорить
+    об этом надо до, а не после.</p>
+  </div>
+
   <div class="card card--task">
     <h2><span class="tag">ЗАДАНИЕ</span> где одной роли мало</h2>
     <div id="t-access-role-or-attribute"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">ПЕСОЧНИЦА</span> попробуйте открыть карту</h2>
+    <p>Выберите, кто вы и чью карту открываете. Система ответит так, как ответила бы настоящая, — и
+    объяснит, на чём основано решение.</p>
+    <div class="two-w">
+      <div>
+        <div class="ex-h">кто вы</div>
+        <div class="chips" id="sand-who"></div>
+        <div class="ex-h" style="margin-top:14px">чью карту открываете</div>
+        <div class="chips" id="sand-what"></div>
+      </div>
+      <div>
+        <div class="ex-h">что ответит система</div>
+        <div class="console" id="sand-out"></div>
+        <div class="note" id="sand-note"></div>
+      </div>
+    </div>
   </div>
 
   <div class="card card--task">
@@ -401,6 +498,15 @@
 <section class="panel" id="secrets" role="tabpanel" aria-label="Секреты">
   <p class="lead">Секрет — то, чем можно воспользоваться <b>от имени системы</b>. Утекает он не через взлом, а через обычную работу: задача в трекере, журнал, переписка, скриншот, история репозитория.</p>
 
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> секрет — это ключ, а не адрес</h2>
+    <p>Адрес дома можно написать на заборе — по нему в дом не войдёшь. Ключ от двери — нельзя:
+    им пользуются вместо вас. Разница та же и в системах: адрес сервиса, часовой пояс и срок жизни
+    токена показать не страшно, а ключ доступа к платежам — это и есть «войти вместо вас».</p>
+    <p>Из этого следует всё остальное: секрет не лежит в коде, не печатается в журнал, не
+    пересылается в переписке — и его можно быстро заменить, не останавливая работу.</p>
+  </div>
+
   <div class="card card--task">
     <h2><span class="tag">ЗАДАНИЕ</span> секрет или настройка</h2>
     <div id="t-secret-or-setting"></div>
@@ -433,6 +539,16 @@
 <section class="panel" id="audit" role="tabpanel" aria-label="Аудит">
   <p class="lead">Два разных журнала с разными читателями и сроками. Журнал системы нужен дежурному и живёт недели; аудит нужен при разборе спорной ситуации и живёт годами. Смешанные в одном потоке, они <b>теряют друг друга</b>.</p>
 
+  <div class="card card--plain">
+    <h2><span class="tag">НА ПАЛЬЦАХ</span> два журнала, которые всё время путают</h2>
+    <p>В подъезде две записи. Первая — журнал техника: когда меняли лампочку и почему гудел лифт.
+    Вторая — записи домофона: кто и во сколько заходил. Первый нужен, чтобы чинить; второй — чтобы
+    разобраться, если что-то случилось.</p>
+    <p>В системах ровно так же: журнал работы отвечает на вопрос «что с системой», аудит — на вопрос
+    «кто и что сделал с чужими данными». У них разные читатели, разные сроки хранения и разный
+    состав, а сваленные в одну кучу они теряют друг друга.</p>
+  </div>
+
   <div class="card card--task">
     <h2><span class="tag">ЗАДАНИЕ</span> журнал системы или журнал людей</h2>
     <div id="t-audit-or-log"></div>
@@ -453,6 +569,15 @@
         <div class="note" id="audit-note"></div>
       </div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">РАССЛЕДОВАНИЕ</span> найдите подозрительный просмотр</h2>
+    <p>Утром выяснилось: диагноз пациента с карты c-10483 оказался в сети. Вот пять записей журнала за
+    сутки. Нажмите ту, с которой стоит начать разбор.</p>
+    <div class="lines" id="trace-lines"></div>
+    <div class="note" id="trace-note"></div>
+    <div class="form-row"><button class="act ghost" id="trace-reset" type="button">Сбросить</button></div>
   </div>
 
   <div class="card card--task">
@@ -1506,6 +1631,248 @@ function paintAudit(){
   }
 }
 
+
+/* ── «Здесь же нет имени» ────────────────────────────────────────────── */
+
+const WHO_ROWS = [
+  {
+    row: 'пол: жен · год рождения: 1984 · город: Иркутск · приём: 12 марта · врач: Соколова',
+    found: 1,
+    name: 'Иванова Анна Петровна, карта c-10483',
+    note: 'Пять признаков — и человек один. Имени в строке нет, а указывает она ровно на него: достаточно знать, кто из знакомых был у Соколовой 12 марта.',
+    cls: 'note bad',
+  },
+  {
+    row: 'пол: муж · год рождения: 1990 · город: Иркутск · приём: 12 марта',
+    found: 4,
+    name: '',
+    note: 'Четверо. Уже лучше, но всё ещё опасно: одного внешнего факта — например, что коллега брал отгул в тот день, — хватит, чтобы сузить до одного.',
+    cls: 'note warn',
+  },
+  {
+    row: 'пол: муж · возраст: 30–39 · регион: Иркутская область · месяц приёма: март',
+    found: 212,
+    name: '',
+    note: 'Двести с лишним человек в одной группе. Вот это уже обезличенные данные: строка не указывает ни на кого конкретно, а для отчётов годится так же.',
+    cls: 'note ok',
+  },
+];
+let whoAt = 0;
+let whoShown = false;
+
+function paintWho(){
+  const item = WHO_ROWS[whoAt];
+
+  document.getElementById('who-row').textContent = item.row;
+
+  const out = document.getElementById('who-out');
+  const note = document.getElementById('who-note');
+
+  if (!whoShown) {
+    out.textContent = 'нажмите «Найти человека»';
+    note.className = 'note';
+    note.innerHTML = '<b>Вопрос.</b> Как думаете, сколько людей подходит под эту строку — один, несколько или сотни?';
+
+    return;
+  }
+
+  out.textContent =
+    'ищем среди 5 000 пациентов…\n' +
+    'подходит: ' + item.found + (item.found === 1 ? ' человек' : (item.found < 5 ? ' человека' : ' человек')) +
+    (item.name === '' ? '' : '\n\n' + item.name);
+
+  note.className = item.cls;
+  note.innerHTML = '<b>Что это значит.</b> ' + item.note;
+}
+
+document.getElementById('who-run').addEventListener('click', () => { whoShown = true; paintAll(); });
+document.getElementById('who-next').addEventListener('click', () => {
+  whoAt = (whoAt + 1) % WHO_ROWS.length;
+  whoShown = false;
+  paintAll();
+});
+
+/* ── Три просьбы одного пациента ─────────────────────────────────────── */
+
+const THREE = [
+  {
+    name: '1. «Запишите меня к врачу»',
+    out: 'нужны: имя, телефон, дата рождения\nоснование: договор — без этого услугу не оказать\nотказаться: нельзя, но можно не пользоваться сервисом',
+    note: 'Данные нужны для того, за чем человек пришёл. Это <b>договор</b>: спрашивать отдельное разрешение не нужно, но и собирать сверх необходимого — тоже.',
+    cls: 'note',
+  },
+  {
+    name: '2. «Больше не шлите мне акции»',
+    out: 'рассылка: ОСТАНОВЛЕНА немедленно\nзапись к врачу: работает\nнапоминание о приёме: работает — это часть услуги\nкарта и приёмы: хранятся',
+    note: 'Рассылка держалась на <b>согласии</b>, поэтому выключается по первой просьбе — и система обязана уметь это сделать кнопкой, а не письмом в поддержку. Остальное не трогается: у него другое основание.',
+    cls: 'note ok',
+  },
+  {
+    name: '3. «Удалите обо мне всё»',
+    out: 'телефон и почта для рассылки: удалены\nличный кабинет: закрыт\nмедицинская карта: ХРАНИТСЯ — срок задан законом\nответ человеку: что удалено, что нет и почему',
+    note: 'Здесь чаще всего ошибаются в обе стороны: либо удаляют медицинскую документацию, чего делать нельзя, либо отказывают целиком, хотя часть данных удалить обязаны. Правильный ответ — разделить и <b>объяснить человеку словами</b>.',
+    cls: 'note warn',
+  },
+];
+let threeAt = -1;
+
+function paintThree(){
+  const box = document.getElementById('three-steps');
+  box.replaceChildren();
+
+  THREE.forEach((step, index) => {
+    box.append(el('button', {
+      type: 'button', class: index <= threeAt ? 'step done' : 'step',
+      'aria-pressed': index === threeAt ? 'true' : 'false',
+      'data-focus': 'three:' + index, text: step.name,
+      onclick: () => { threeAt = index; paintAll(); },
+    }));
+  });
+
+  const out = document.getElementById('three-out');
+  const note = document.getElementById('three-note');
+
+  if (threeAt < 0) {
+    out.textContent = 'нажмите «Дальше» — разберём по одной просьбе';
+    note.className = 'note';
+    note.innerHTML = '<b>Условие.</b> Пациент Анна записалась к врачу, потом попросила не слать акции, потом — удалить о ней всё. Три просьбы, три разных ответа системы.';
+
+    return;
+  }
+
+  const step = THREE[threeAt];
+  out.textContent = step.out;
+  note.className = step.cls;
+  note.innerHTML = '<b>Почему так.</b> ' + step.note;
+}
+
+document.getElementById('three-next').addEventListener('click', () => {
+  threeAt = Math.min(threeAt + 1, THREE.length - 1);
+  paintAll();
+});
+document.getElementById('three-reset').addEventListener('click', () => { threeAt = -1; paintAll(); });
+
+/* ── Песочница доступа ───────────────────────────────────────────────── */
+
+const SAND_WHO = [
+  { id: 'patient', name: 'пациент Анна' },
+  { id: 'doctor', name: 'врач Соколова' },
+  { id: 'other-doctor', name: 'врач из другой клиники' },
+  { id: 'registrar', name: 'регистратор' },
+];
+const SAND_WHAT = [
+  { id: 'own', name: 'свою карту' },
+  { id: 'mine', name: 'карту своего пациента' },
+  { id: 'foreign', name: 'карту чужого пациента' },
+];
+let sandWho = 'doctor';
+let sandWhat = 'mine';
+
+function paintSandbox(){
+  const who = document.getElementById('sand-who');
+  who.replaceChildren();
+
+  for (const one of SAND_WHO) {
+    who.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': sandWho === one.id ? 'true' : 'false',
+      'data-focus': 'sandwho:' + one.id,
+      onclick: () => { sandWho = one.id; paintAll(); },
+    }, [el('span', { text: one.name })]));
+  }
+
+  const what = document.getElementById('sand-what');
+  what.replaceChildren();
+
+  for (const one of SAND_WHAT) {
+    what.append(el('button', {
+      type: 'button', class: 'chip', 'aria-pressed': sandWhat === one.id ? 'true' : 'false',
+      'data-focus': 'sandwhat:' + one.id,
+      onclick: () => { sandWhat = one.id; paintAll(); },
+    }, [el('span', { text: one.name })]));
+  }
+
+  const rules = {
+    'patient|own': ['открыто', 'Своя карта — своё дело. Проверка идёт по сессии: система знает, кто вошёл, и не спрашивает об этом браузер.', 'note ok'],
+    'patient|mine': ['отказано', 'У пациента нет «своих пациентов»: роль не даёт такой возможности вовсе.', 'note'],
+    'patient|foreign': ['не найдено', 'Именно «не найдено», а не «нет прав»: по разнице ответов чужие карты перебирают. Попытка записывается в журнал.', 'note ok'],
+    'doctor|own': ['открыто', 'Врач тоже пациент: свою карту он открывает как обычный человек.', 'note'],
+    'doctor|mine': ['открыто', 'Роль позволяет, и связь есть: пациент записан к этому врачу. Именно эта связь и есть признак объекта.', 'note ok'],
+    'doctor|foreign': ['открыто с пометкой', 'Спорный случай, и решать его должен продукт. Врачу иногда нужна чужая карта — при замене коллеги или в неотложной ситуации. Правильный ответ не «запретить», а «пустить и записать в аудит с требованием указать причину».', 'note warn'],
+    'other-doctor|own': ['открыто', 'Своя карта открывается всегда.', 'note'],
+    'other-doctor|mine': ['не найдено', 'Пациент записан к другому врачу другой клиники: связи нет, а роль сама по себе доступа не даёт.', 'note ok'],
+    'other-doctor|foreign': ['не найдено', 'Ни роли, ни связи. Здесь как раз видно, почему одних ролей мало: «врач» — это не пропуск ко всем картам страны.', 'note ok'],
+    'registrar|own': ['открыто', 'Своя карта — своё дело.', 'note'],
+    'registrar|mine': ['отказано', 'Регистратор работает с расписанием, а не с медицинской частью карты. Запись на приём он создаст, диагноз — не увидит.', 'note ok'],
+    'registrar|foreign': ['отказано', 'То же самое: медицинская часть не нужна для его работы, значит, не выдаётся.', 'note ok'],
+  };
+
+  const [verdictText, why, cls] = rules[sandWho + '|' + sandWhat];
+
+  document.getElementById('sand-out').textContent =
+    'кто: ' + SAND_WHO.find((o) => o.id === sandWho).name + '\n' +
+    'что: ' + SAND_WHAT.find((o) => o.id === sandWhat).name + '\n\n' +
+    'ответ системы: ' + verdictText.toUpperCase();
+
+  const note = document.getElementById('sand-note');
+  note.className = cls;
+  note.innerHTML = '<b>Почему.</b> ' + why;
+}
+
+/* ── Расследование по журналу ────────────────────────────────────────── */
+
+const TRACE = [
+  { text: '08:12 · врач Соколова · открыла c-10483 · приём в 08:30 был', suspicious: false, why: 'Врач смотрит карту перед приёмом — обычное дело, повод законный.' },
+  { text: '09:40 · регистратор Петрова · открыла c-10483 · приёма не было', suspicious: true, why: 'Регистратору медицинская часть не нужна, приёма в этот день не было, и карта та самая. С этой записи и начинают разбор — не потому, что человек виноват, а потому, что повод не виден.' },
+  { text: '11:05 · врач Соколова · открыла c-10102 · приём в 11:15 был', suspicious: false, why: 'Другая карта, законный повод — к нашему случаю отношения не имеет.' },
+  { text: '14:20 · администратор Крылов · выгрузил список пациентов клиники', suspicious: false, why: 'Выгрузка списка — его инструмент, и она отдельно журналируется. Диагнозов в списке нет, к утечке карты это не ведёт.' },
+  { text: '19:58 · врач Соколова · открыла c-10483 · приёма не было', suspicious: true, why: 'Поздний вечер, приёма не было. Может быть законным — врач дописывает заключение, — но проверить стоит: контекст «был ли приём» для того и пишется в журнал.' },
+];
+const traceOn = new Set();
+let traceShown = false;
+
+function paintTrace(){
+  const box = document.getElementById('trace-lines');
+  box.replaceChildren();
+
+  TRACE.forEach((row, index) => {
+    const on = traceOn.has(index);
+    let cls = 'line';
+    if (traceShown) cls += row.suspicious ? ' right' : (on ? ' wrong' : '');
+
+    const button = el('button', {
+      type: 'button', class: cls, 'aria-pressed': on ? 'true' : 'false',
+      'data-focus': 'trace:' + index,
+      onclick: () => { on ? traceOn.delete(index) : traceOn.add(index); traceShown = true; paintAll(); },
+    });
+    button.append(el('span', { text: row.text }));
+    if (traceShown) button.append(el('span', { class: 'src', text: row.why }));
+    box.append(button);
+  });
+
+  const note = document.getElementById('trace-note');
+
+  if (!traceShown) {
+    note.className = 'note';
+    note.innerHTML = '<b>Подсказка.</b> Смотрите не на людей, а на повод: была ли у человека причина открывать именно эту карту именно тогда.';
+
+    return;
+  }
+
+  const picked = [...traceOn];
+  const right = picked.length > 0 && picked.every((index) => TRACE[index].suspicious);
+
+  note.className = right ? 'note ok' : 'note warn';
+  note.innerHTML = right
+    ? '<b>Верно.</b> Подозрительны две записи, и обе вычисляются одинаково: роль не требует этой карты, а повода — приёма в этот день — не было. Обратите внимание, что журнал сам ничего не доказывает: он показывает, где смотреть.'
+    : '<b>Смотрите на повод.</b> Записи, где приём был, объясняются работой. Подозрительны те, где карта открыта без причины: именно ради этого в журнал и пишут контекст.';
+}
+
+document.getElementById('trace-reset').addEventListener('click', () => {
+  traceOn.clear();
+  traceShown = false;
+  paintAll();
+});
+
 /* ── Общая отрисовка ─────────────────────────────────────────────────── */
 
 function paintAll(){
@@ -1525,6 +1892,10 @@ function paintAll(){
   paintIdor();
   paintRotation();
   paintAudit();
+  paintWho();
+  paintThree();
+  paintSandbox();
+  paintTrace();
 
   restoreFocus(keep);
 }
